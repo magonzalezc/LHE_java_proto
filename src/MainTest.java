@@ -72,6 +72,12 @@ public class MainTest {
 		FrameCompressor fc=new LHE.FrameCompressor(1);
 		fc.DEBUG=true;
 		fc.loadFrame(filename);
+		//solo para pruebas
+		//------------------
+		//fc.img.getQuarterImgYUV();
+		//fc.img.YUVtoBMP("./img/quarter.bmp", fc.img.YUV[0]);
+		//if (1==1)System.exit(0);
+		//------------------
 		
 		//fc.img.YUVtoBMP("./output_debug/orig_YUV_BN.bmp",fc.img.YUV[0]);
 		System.out.println(" width:"+fc.img.width);
@@ -160,7 +166,7 @@ public class MainTest {
 		}
 		//-------------------------------------------------
 		
-		System.out.println ("select interpolation method: 1)NN  or 2)BIL or 3)BIC or 4) EXPERIMENTAL [default=3]:");
+		System.out.println ("select interpolation method: 1)NN  or 2)BIL or 3)BIC or 4) EXPERIMENTAL 5) NNL 6) NNSR 7)EPX [default=3] :");
 		String interpol = readKeyboard();
 		if (interpol.equals("")) interpol=new String("3");
 		
@@ -222,6 +228,9 @@ public class MainTest {
 		else if (interpol.equals("2")) fp.INTERPOL=new String("BILINEAL");
 		else if (interpol.equals("1")) fp.INTERPOL=new String("NN");
 		else if (interpol.equals("4")) fp.INTERPOL=new String("EXPERIMENTAL");
+		else if (interpol.equals("5")) fp.INTERPOL=new String("NNL");
+		else if (interpol.equals("6")) fp.INTERPOL=new String("NNSR");
+		else if (interpol.equals("7")) fp.INTERPOL=new String("EPX");
 		
 		fp.DEBUG=debug;
 		fp.img=fc.img;
@@ -293,7 +302,10 @@ public class MainTest {
 		else fc.MODE=new String("ELASTIC");
 		
 		fc.loadFrame(filename);//esto crea la grid
-		
+		//aqui una demora para el disco
+				try{Thread.sleep(100);}
+				catch(Exception e){}
+				
 		//esto es fundamental para luego medir el PSNR en BN
 		//------------------------------------------------------
 		fc.img.YUVtoBMP("./output_debug/orig_YUV.bmp",fc.img.YUV[0]);
