@@ -115,7 +115,7 @@ public class PRblock {
 	}
 	//******************************************************************
 	//******************************************************************
-		public void quantizeGeometricalPR_ok()
+		public void quantizeGeometricalPR_ok_no_se_usa()
 		{
 			//quantization based on equi-distant thresholds
 			float level0=0.25f;
@@ -347,6 +347,164 @@ public class PRblock {
 		//nqPRx=PRx;
 		//nqPRy=PRy;
 	}
+//**********************************************************************************	
+	public void computePRmetricsSPS()
+	{
+		//PR computation normalized to 0..1
+
+		//Grid class creates a grid of Blocks and PRBlocks.
+		//PRBlocks coordinates are in 0..width and 0..height
+		int last_hop=0;
+		int hop=0;
+		boolean hop_sign=true;
+		boolean last_hop_sign=true;
+		PRx=0;
+		PRy=0;
+
+		//float tune=1.0f;
+		//PRx
+
+		float Cx=0;
+		float Cy=0; 
+
+
+		for (int y=yini;y<=yfin;y++)
+		{
+			if (y>0)
+			{
+				last_hop=img.hops[0][(y-1)*img.width+xini]-4;
+				//last_hop_sign=(last_hop>0);
+				last_hop_sign=(last_hop>=0); //NUEVO 19/3/2015 
+				//System.out.println(" signo:"+last_hop_sign+ "hop:"+last_hop);
+				
+			}
+			//horizontal scanlines
+			//for (int x=xini;x<=xfin;x++)
+			
+				for (int x=xini;x<=xini+(xfin-xini)/2;x++)
+			{
+				
+				hop=img.hops[0][y*img.width+x]-4;//[0] is lumminance (Y)
+				// hop value: -4....0....+4
+				if (hop==0) continue; //h0 no sign
+				//hop_sign=(hop>0);
+				hop_sign=(hop>=0);//NUEVO 19/3/2015 
+				//if (hop>0) hop_sign=true;
+				//else hop_sign=false;
+				//if (hop_sign!=last_hop_sign && last_hop!=0) {
+
+				if ((hop_sign!=last_hop_sign && last_hop!=0) || hop==4 || hop==-4) {//NUEVO 19/3/2015 
+				
+				//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop>=3 || hop<=-3) {//NUEVO 19/3/2015 
+						
+					int weight=hop;
+					if (weight<0)weight=-weight;
+					//int weight=hop;
+					//if (hop%2!=0) weight--; // possitive and negative must weigh the same [0..2..4..6]
+					//weight=8-hop; //from 2 to 8
+					//if (weight>7 ) tune=1;
+					//else tune=1;
+					//antes era 0 2 4 6, osea...max 6
+					//int w=0;
+					//if (weight!=0) w=4;
+					//PRx+=w;//weight;
+					PRx+=weight;
+					//System.out.println ("hop:"+hop+"  lasth:"+last_hop+ "x:"+x);
+					Cx++;
+
+				}
+				//System.out.println("scan");
+				last_hop=hop;
+				last_hop_sign=hop_sign;
+			}
+			//System.out.println("scan");
+		}
+
+		hop=0;
+		hop_sign=true;
+		last_hop=0;
+		last_hop_sign=true;
+
+		//System.out.println(" processing vscanlines  img.width"+img.width+"   xini:"+xini+"   xfin:"+xfin+"  yini:"+yini+"    yfin:"+yfin);
+		//for (int x=xini;x<=xfin;x++)
+		for (int x=xini;x<=xini+(xfin-xini)/2;x++)
+		{
+			//System.out.println("x:"+x);
+			if (x>0)
+			{
+			    //left pixel
+				last_hop=img.hops[0][(yini)*img.width+x-1]-4;
+				//last_hop_sign=(last_hop>0);
+				last_hop_sign=(last_hop>=0);//NUEVO 19/3/2015 
+			}
+			//vertical scanlines
+			for (int y=yini;y<=yfin;y++)
+			{
+
+				hop=img.hops[0][y*img.width+x]-4;//[0] is lumminance (Y)
+				if (hop==0) continue; //h0 no sign
+				//hop_sign=(hop>0);
+				hop_sign=(hop>=0);//NUEVO 19/3/2015 
+				//if (hop%2!=last_hop%2 && last_hop!=8) {
+				//if (hop_sign!=last_hop_sign && last_hop!=0) {
+				
+				if ((hop_sign!=last_hop_sign && last_hop!=0) || hop==4 || hop==-4){
+				//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop>=3 || hop<=-3){
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop!=4){
+							
+					
+					int weight=hop;
+					if (weight<0)weight=-weight;
+					//if (hop%2!=0) weight--; // possitive and negative must weigh the same [0..2..4..6]
+					//weight=8-hop; //from 2 to 8
+					//int w=0;
+					//if (weight!=0) w=4;
+					//PRy+=w;//weight;
+					PRy+=weight;
+					//System.out.println ("hop:"+hop+"  lasth:"+last_hop);
+					Cy++;
+				}
+				last_hop=hop;
+				last_hop_sign=hop_sign;
+			}
+
+		}
+
+		//System.out.println("numerador:"+PRx+" denominador:"+Cx*4);
+		if (PRx>0) PRx=PRx/(Cx*4);
+		if (PRy>0) PRy=PRy/(Cy*4);
+
+		//if (PRx>0) PRx=PRx/((xfin-xini)*(yfin-yini)*4);
+		//if (PRy>0) PRy=PRy/((xfin-xini)*(yfin-yini)*4);
+		
+		//if (PRx<0.01f || PRy<0.01f) System.out.println("NOTHING");
+		if (PRx>1 || PRy>1) {
+			System.out.println(" failure. imposible PR value > 1");
+			System.exit(0);
+		}
+
+		//if (PRx==0.0) {
+			//System.out.println("ha salido cero");
+			//System.exit(0);
+		//}
+		//else System.out.println("no es cero");
+		
+    	//System.out.println("PRx:"+PRx+"  , PRy:"+PRy+"   xini:"+xini+"  xfin:"+xfin+"  yini:"+yini+"  yfin:"+yfin);
+		//System.out.println((int)(PRx*100));
+		//System.out.println((int)(PRy*100));
+		float umbral=10.5f;//0.5f; //LATER
+		if (PRx>umbral) PRx=0.5f;//1;
+		if (PRy>umbral) PRy=0.5f;//1;
+		
+		//PRx=1-PRx;
+		//PRy=1-PRy;
+		
+		//nqPRx=PRx;
+		//nqPRy=PRy;
+	}
+
+	
+	
 	//*******************************************
 	public void quantizeNaturalPR()
 	{
@@ -366,4 +524,332 @@ public class PRblock {
 		else PRy=1f;//(1f+level2)/2f;
 
 	}
+	//****************************************************
+	//******************************************************************	
+		public void computePRmetrics_experimental()
+		{
+			//PR computation normalized to 0..1
+
+			//Grid class creates a grid of Blocks and PRBlocks.
+			//PRBlocks coordinates are in 0..width and 0..height
+			int last_hop=0;
+			int hop=0;
+			boolean hop_sign=true;
+			boolean last_hop_sign=true;
+			PRx=0;
+			PRy=0;
+
+			//float tune=1.0f;
+			//PRx
+
+			float Cx=0;
+			float Cy=0; 
+
+
+			for (int y=yini;y<=yfin;y++)
+			{
+				if (y>0)
+				{
+					last_hop=img.hops[0][(y-1)*img.width+xini]-4;
+					//last_hop_sign=(last_hop>0);
+					last_hop_sign=(last_hop>=0); //NUEVO 19/3/2015 
+					//System.out.println(" signo:"+last_hop_sign+ "hop:"+last_hop);
+					
+				}
+				//horizontal scanlines
+				for (int x=xini;x<=xfin;x++)
+				{
+					
+					hop=img.hops[0][y*img.width+x]-4;//[0] is lumminance (Y)
+					// hop value: -4....0....+4
+					if (hop==0) continue; //h0 no sign
+					//hop_sign=(hop>0);
+					hop_sign=(hop>=0);//NUEVO 19/3/2015 
+					//if (hop>0) hop_sign=true;
+					//else hop_sign=false;
+					
+					if (hop_sign!=last_hop_sign || hop==4 || hop==-4) {
+					//if (hop_sign!=last_hop_sign && last_hop!=0) {
+
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop==4 || hop==-4) {//NUEVO 19/3/2015 
+					
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop>=3 || hop<=-3) {//NUEVO 19/3/2015 
+							
+						int weight=hop;
+						if (weight<0)weight=-weight;
+						//int weight=hop;
+						//if (hop%2!=0) weight--; // possitive and negative must weigh the same [0..2..4..6]
+						//weight=8-hop; //from 2 to 8
+						//if (weight>7 ) tune=1;
+						//else tune=1;
+						//antes era 0 2 4 6, osea...max 6
+						//int w=0;
+						//if (weight!=0) w=4;
+						//PRx+=w;//weight;
+						PRx+=weight;
+						//System.out.println ("hop:"+hop+"  lasth:"+last_hop+ "x:"+x);
+						Cx++;
+
+					}
+					//System.out.println("scan");
+					last_hop=hop;
+					last_hop_sign=hop_sign;
+				}
+				//System.out.println("scan");
+			}
+
+			hop=0;
+			hop_sign=true;
+			last_hop=0;
+			last_hop_sign=true;
+
+			//System.out.println(" processing vscanlines  img.width"+img.width+"   xini:"+xini+"   xfin:"+xfin+"  yini:"+yini+"    yfin:"+yfin);
+			for (int x=xini;x<=xfin;x++)
+			{
+				//System.out.println("x:"+x);
+				if (x>0)
+				{
+				    //left pixel
+					last_hop=img.hops[0][(yini)*img.width+x-1]-4;
+					//last_hop_sign=(last_hop>0);
+					last_hop_sign=(last_hop>=0);//NUEVO 19/3/2015 
+				}
+				//vertical scanlines
+				for (int y=yini;y<=yfin;y++)
+				{
+
+					hop=img.hops[0][y*img.width+x]-4;//[0] is lumminance (Y)
+					if (hop==0) continue; //h0 no sign
+					//hop_sign=(hop>0);
+					hop_sign=(hop>=0);//NUEVO 19/3/2015 
+					//if (hop%2!=last_hop%2 && last_hop!=8) {
+					
+					if (hop_sign!=last_hop_sign || hop==4 || hop==-4) {
+					
+					//if (hop_sign!=last_hop_sign && last_hop!=0) {
+					
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop==4 || hop==-4){
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop>=3 || hop<=-3){
+						//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop!=4){
+								
+						
+						int weight=hop;
+						if (weight<0)weight=-weight;
+						//if (hop%2!=0) weight--; // possitive and negative must weigh the same [0..2..4..6]
+						//weight=8-hop; //from 2 to 8
+						//int w=0;
+						//if (weight!=0) w=4;
+						//PRy+=w;//weight;
+						PRy+=weight;
+						//System.out.println ("hop:"+hop+"  lasth:"+last_hop);
+						Cy++;
+					}
+					last_hop=hop;
+					last_hop_sign=hop_sign;
+				}
+
+			}
+
+			//System.out.println("numerador:"+PRx+" denominador:"+Cx*4);
+			if (PRx>0) PRx=PRx/(Cx*4);
+			if (PRy>0) PRy=PRy/(Cy*4);
+
+			//if (PRx>0) PRx=PRx/((xfin-xini)*(yfin-yini)*4);
+			//if (PRy>0) PRy=PRy/((xfin-xini)*(yfin-yini)*4);
+			
+			//if (PRx<0.01f || PRy<0.01f) System.out.println("NOTHING");
+			if (PRx>1 || PRy>1) {
+				System.out.println(" failure. imposible PR value > 1");
+				System.exit(0);
+			}
+
+			//if (PRx==0.0) {
+				//System.out.println("ha salido cero");
+				//System.exit(0);
+			//}
+			//else System.out.println("no es cero");
+			
+	    	//System.out.println("PRx:"+PRx+"  , PRy:"+PRy+"   xini:"+xini+"  xfin:"+xfin+"  yini:"+yini+"  yfin:"+yfin);
+			//System.out.println((int)(PRx*100));
+			//System.out.println((int)(PRy*100));
+			float umbral=10.5f;//0.5f; //LATER
+			if (PRx>umbral) PRx=0.5f;//1;
+			if (PRy>umbral) PRy=0.5f;//1;
+			
+			//PRx=1-PRx;
+			//PRy=1-PRy;
+			
+			//nqPRx=PRx;
+			//nqPRy=PRy;
+		}
+		//*******************************************
+	
+		//**********************************************************************************	
+		public void computePRmetrics4SPS(int stepy, int stepx)
+		{
+			//PR computation normalized to 0..1
+
+			//Grid class creates a grid of Blocks and PRBlocks.
+			//PRBlocks coordinates are in 0..width and 0..height
+			int last_hop=0;
+			int hop=0;
+			boolean hop_sign=true;
+			boolean last_hop_sign=true;
+			PRx=0;
+			PRy=0;
+
+			
+			float Cx=0;
+			float Cy=0; 
+
+			
+			
+			//      PRx COMPUTATION
+			// ----------------------------------------
+			// en vertical saltamos de stepy en stepy
+			for (int y=yini;y<=yfin;y+=stepy)
+			{
+				if (y>0)
+				{
+					
+					//last_hop=img.hops[0][(y-1)*img.width+xini]-4;
+					last_hop=0; // como hay una distancia stepy no puedo considerar el de la linea superior
+					last_hop_sign=(last_hop>=0); //NUEVO 19/3/2015 
+					
+					
+				}
+				//horizontal scanline
+				//--------------------
+				for (int x=xini;x<=xfin;x++)
+				{
+					
+					hop=img.hops[0][y*img.width+x]-4;//[0] is lumminance (Y)
+					// hop value: -4....0....+4
+					if (hop==0) continue; //h0 no sign
+					//hop_sign=(hop>0);
+					hop_sign=(hop>=0);//NUEVO 19/3/2015 
+					//if (hop>0) hop_sign=true;
+					//else hop_sign=false;
+					//if (hop_sign!=last_hop_sign && last_hop!=0) {
+
+					if ((hop_sign!=last_hop_sign && last_hop!=0) || hop==4 || hop==-4) {//NUEVO 19/3/2015 
+					
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop>=3 || hop<=-3) {//NUEVO 19/3/2015 
+							
+						int weight=hop;
+						if (weight<0)weight=-weight;
+						//int weight=hop;
+						//if (hop%2!=0) weight--; // possitive and negative must weigh the same [0..2..4..6]
+						//weight=8-hop; //from 2 to 8
+						//if (weight>7 ) tune=1;
+						//else tune=1;
+						//antes era 0 2 4 6, osea...max 6
+						//int w=0;
+						//if (weight!=0) w=4;
+						//PRx+=w;//weight;
+						PRx+=weight;
+						//System.out.println ("hop:"+hop+"  lasth:"+last_hop+ "x:"+x);
+						Cx++;
+
+					}
+					//System.out.println("scan");
+					last_hop=hop;
+					last_hop_sign=hop_sign;
+				}
+				//System.out.println("scan");
+			}
+
+			hop=0;
+			hop_sign=true;
+			last_hop=0;
+			last_hop_sign=true;
+
+			//System.out.println(" processing vscanlines  img.width"+img.width+"   xini:"+xini+"   xfin:"+xfin+"  yini:"+yini+"    yfin:"+yfin);
+			//for (int x=xini;x<=xfin;x++)
+			
+			//         PRy COMPUTATION
+			// ----------------------------------
+			
+			
+			for (int x=xini;x<=xfin;x+=stepx)
+			{
+				//System.out.println("x:"+x);
+				if (x>0)
+				{
+				    //left pixel
+					//last_hop=img.hops[0][(yini)*img.width+x-1]-4;
+					
+					last_hop=0;
+					last_hop_sign=(last_hop>=0);//NUEVO 19/3/2015 
+				}
+				//vertical scanlines
+				for (int y=yini;y<=yfin;y++)
+				{
+
+					hop=img.hops[0][y*img.width+x]-4;//[0] is lumminance (Y)
+					if (hop==0) continue; //h0 no sign
+					//hop_sign=(hop>0);
+					hop_sign=(hop>=0);//NUEVO 19/3/2015 
+					//if (hop%2!=last_hop%2 && last_hop!=8) {
+					//if (hop_sign!=last_hop_sign && last_hop!=0) {
+					
+					if ((hop_sign!=last_hop_sign && last_hop!=0) || hop==4 || hop==-4){
+					//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop>=3 || hop<=-3){
+						//if ((hop_sign!=last_hop_sign && last_hop!=0) || hop!=4){
+								
+						
+						int weight=hop;
+						if (weight<0)weight=-weight;
+						//if (hop%2!=0) weight--; // possitive and negative must weigh the same [0..2..4..6]
+						//weight=8-hop; //from 2 to 8
+						//int w=0;
+						//if (weight!=0) w=4;
+						//PRy+=w;//weight;
+						PRy+=weight;
+						//System.out.println ("hop:"+hop+"  lasth:"+last_hop);
+						Cy++;
+					}
+					last_hop=hop;
+					last_hop_sign=hop_sign;
+				}
+
+			}
+
+			//System.out.println("numerador:"+PRx+" denominador:"+Cx*4);
+			if (PRx>0) PRx=PRx/(Cx*4);
+			if (PRy>0) PRy=PRy/(Cy*4);
+
+			//if (PRx>0) PRx=PRx/((xfin-xini)*(yfin-yini)*4);
+			//if (PRy>0) PRy=PRy/((xfin-xini)*(yfin-yini)*4);
+			
+			//if (PRx<0.01f || PRy<0.01f) System.out.println("NOTHING");
+			if (PRx>1 || PRy>1) {
+				System.out.println(" failure. imposible PR value > 1");
+				System.exit(0);
+			}
+
+			//if (PRx==0.0) {
+				//System.out.println("ha salido cero");
+				//System.exit(0);
+			//}
+			//else System.out.println("no es cero");
+			
+	    	//System.out.println("PRx:"+PRx+"  , PRy:"+PRy+"   xini:"+xini+"  xfin:"+xfin+"  yini:"+yini+"  yfin:"+yfin);
+			//System.out.println((int)(PRx*100));
+			//System.out.println((int)(PRy*100));
+			float umbral=10.5f;//0.5f; //LATER
+			if (PRx>umbral) PRx=0.5f;//1;
+			if (PRy>umbral) PRy=0.5f;//1;
+			
+			//PRx=1-PRx;
+			//PRy=1-PRy;
+			
+			//nqPRx=PRx;
+			//nqPRy=PRy;
+		}
+
+		
+		
+		//*******************************************
 }
+

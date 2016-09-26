@@ -1170,7 +1170,14 @@ System.out.println("ENTER IN  pppToRectangleShapeFloat");
 				float min_factor= Math.min (MAX_PPP/ppp[0][2],MAX_PPP/ppp[0][3]);
 				side_average=Math.min(min_factor*side_d,side_average);
 			}
+			
+			
+			
+			//side_average=side_max;//PRUEBA 2016
 		}
+		
+		 
+		
 
 		lx_sc=(int) (0.5f+ 2f*lx/side_average);
 
@@ -1303,6 +1310,10 @@ System.out.println("ENTER IN  pppToRectangleShapeFloat");
 				float min_factor= Math.min (MAX_PPP/ppp[1][1],MAX_PPP/ppp[1][3]);
 				side_average=Math.min(min_factor*side_b,side_average);
 			}
+			
+			//side_average=side_max;//PRUEBA 2016
+			
+			
 		}
 		//System.out.println("side average:"+side_average);
 		ly_sc=(int) (0.5f+ 2f*ly/side_average);
@@ -2191,7 +2202,7 @@ System.out.println("ENTER IN  pppToRectangleShapeFloat");
 			//ppp_yc is updated at each iteration
 			pppy=ppp_yc;//-grycy_sc;
 
-			float yf=yini+pppy-1;
+			float yf=yini+pppy-1f;//1;
 
 			//previous interpolated y coordinate
 			int y_anti=(int)(yf-pppy+0.5f);
@@ -5809,5 +5820,1180 @@ public void fillFrontierV(int[][]src)
 					//fill the rest of the line. Not needed 
 					
 			}
-		//*********************************************************************************	
+//*********************************************************************************	
+//
+//  NEW SUPERRESOLUTION INTERPOLATION FUNCTIONS
+//
+//*********************************************************************************
+	//*******************************************************************
+		/**
+		 * vertical interpolation in neighbour mode + lineal
+		 *   NEAREST NEIGHBOUR LINEAR (NNL)
+		 *  the interpolation process is: first vertical then horizontal
+		 * @param src_YUV
+		 * @param result_YUV
+		 */
+		public void interpolateNNLV( int[][] src_YUV, int[][] result_YUV)
+		{
+			float lenx=lx_sc;
+	//lenx=lx;
+			//gradient PPPy side c
+			float grycy_sc=(ppp[1][1]-ppp[1][0])/(lenx-1);//lya_sc;
+			//gradient PPPy side d
+			float grydy_sc=(ppp[1][3]-ppp[1][2])/(lenx-1);
+
+			//en la vertical no hace falta porque el bloque esta comprimido y no desplazado
+			float ppp_yc=ppp[1][0];//-grycy_sc*(ppp[0][0]/2)*((lx_sc)/(lx));
+			float ppp_yd=ppp[1][2];//-grydy_sc*(ppp[0][2]/2)*((lx_sc)/(lx));
+
+			// pppy initialized to ppp_yc
+			float pppy=ppp_yc; // only for gradient calculation
+
+			//input image is downsampled_YUV. block width is lx_sc
+			int y=0;
+
+			//dont scan lx but lenx. ( lenx value is lx or lx_sc)
+			for (int x=xini;x<xini+lenx;x++)
+			{
+				float gry_sc=0;
+				//if (ppp_yc!=ppp_yd) gry_sc=(2*ly-2*ppp_yc*(ly_sc)+ppp_yc-ppp_yd)/((ly_sc-1)*ly_sc);
+
+				gry_sc=(ppp_yd-ppp_yc)/(ly_sc-1);
+				
+				//ppp_yc is updated at each iteration
+				pppy=ppp_yc;
+				//pppy=ppp_yc/2f+0.5f;//first segment ends at the middle ***
+				int c1=0; // previous color not exist
+				int c2=0;
+				
+				//float tot_ppp=0f;
+				
+				//aqui pppy ya tiene el valor inicial
+				//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+				//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+				
+				//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+				float yf=yini+pppy/2-1;//si pongo -1 entonces tendre que pintar de c
+				if (yf<yini) yf=yini;
+				
+				//previous interpolated y coordinate
+				int y_anti=yini;//(int)(yf-pppy+0.5f);
+				int y_anti2=0;
+				
+				// bucle for horizontal scanline 
+				// scans the downsampled image, pixel by pixel
+				for (int y_sc=yini;y_sc<yini+ly_sc;y_sc++)
+				{
+					//end of block in nearest neighbour mode
+					//if ( y_sc==yini+ly_sc-1) yf=yfin;
+
+					//integer interpolated y coordinate 
+					y=(int) (yf+0.5f);
+					//y=(int) (yf+1f);//esto queda mejor asi. no se pq
+					
+					if (y>yfin) y=yfin;//esta protección no hace falta
+
+					c2=src_YUV[0][y_sc*img.width+x];//inicialmente y_sc=yini
+					
+					if (y_sc==yini) 
+					{
+						c1=c2;
+						//nearest neighbour mode: copy sample into ppp/2 pixels. this generates blocking effect
+						
+						//si comentamos esta parte y ponemos costuras quedara bien
+						
+						for (int i=yini;i<=y;i++)
+						{
+							result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+						}	
+						
+					}
+					// y_sc is not yini  
+					else //if (y_sc<=yini+ly_sc-1); //intermediate or final segment . copy ppp pixels
+					{
+						
+						
+						//float alfa=(float) (c2-c1)/tot_ppp;
+						float alfa=(float) (c2-c1)/(y-y_anti);
+						//float alfa=(float) (c2-c1)/(y_anti+1-y_anti2);
+								
+						float j=1f;//yanti fue pintado de c1, ahora toca pintar de otro color..no? 
+						
+						for (int i=y_anti+1;i<=y;i++)
+						//for (int i=y_anti2;i<=y_anti+1;i++)
+						{
+						//	result_YUV[0][i*img.width+x]=src_YUV[0][y_sc*img.width+x];
+							result_YUV[0][i*img.width+x]=c1+(int)(alfa*j);
+							j++;
+						}
+						
+						
+					
+					  if (y_sc==yini+ly_sc-1) //final segment. copy ppp/2 pixels. this generates blocking effect
+					    {
+						  for (int i=y+1;i<yini+ly;i++)
+						  //for (int i=y_anti+1;i<yini+ly;i++)
+					  	  {
+							//result_YUV[0][i*img.width+x]=src_YUV[0][y_sc*img.width+x];
+							  result_YUV[0][i*img.width+x]=c2;
+						  }
+					    }
+					
+				    }
+					c1=c2;
+					y_anti2=y_anti;
+					y_anti=y;
+					//tot_ppp=pppy/2f;
+					//yf+=pppy/2f; ///from last ppp
+					pppy+=gry_sc;
+					//yf+=pppy/2;///2f;//from new ppp
+					//tot_ppp+=pppy/2f;
+					yf+=pppy;
+				}//y
+				ppp_yc+=grycy_sc;
+				ppp_yd+=grydy_sc;
+			}//x
+		}	
+		//*******************************************************************
+		/**
+		 * horizontal interpolation in neighbour+ LINEAR mode
+		 * 
+		 *  the interpolation process is: first vertical then horizontal
+		 * @param src_YUV
+		 * @param result_YUV
+		 */
+		public void interpolateNNLH( int[][] src_YUV, int[][] result_YUV)
+		{
+
+			float leny=ly;
+	//leny=ly_sc;
+			float gryax_sc=0;
+			//gradient x of side a
+			if (ppp[0][2]!=ppp[0][0])
+				gryax_sc=(ppp[0][2]-ppp[0][0])/(leny-1);//lya_sc;
+			float grybx_sc=0;
+			if (ppp[0][3]!=ppp[0][1])
+				grybx_sc=(ppp[0][3]-ppp[0][1])/(leny-1);//b_sc;
+
+			//initial ppp values of sides "a" and "b"
+			float ppp_xa=ppp[0][0];
+			float ppp_xb=ppp[0][1];
+
+
+			// pppx is initialized to ppp_xa
+			float pppx=ppp_xa; // only for gradient calculation
+			
+
+			int x=0;
+			//float grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);
+			int x_anti=0;
+
+
+			for (int y=yini;y<yini+leny;y++)
+			{
+				//starts at side c ( which is y==yini)
+				float grx_sc=0;
+
+				//if (ppp_xa!=ppp_xb) grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);				
+				grx_sc=(ppp_xb-ppp_xa)/(lx_sc-1);
+				
+				pppx=ppp_xa;
+				//pppx=ppp_xa/2f;//first segment ends at the middle ***
+				
+				int c1=0; // previous color not exist. updated after each iteration
+				int c2=0; //new color updated at each iteration
+
+				
+				// sample 
+
+				//float xf=xini+pppx-1;// -1 because xini exists
+				float xf=xini+pppx/2-1;// -1 because xini exists
+				if (xf<xini)xf=xini;
+				
+				x_anti=xini;//(int)(xf-pppx+0.5f);
+
+				// bucle for horizontal scanline 
+				for (int x_sc=xini;x_sc<xini+lx_sc;x_sc++)
+				{
+					//if ( x_sc==xini+lx_sc-1) xf=xfin;
+
+					x=(int) (xf+0.5f);
+					//x=(int) (xf+1f);//queda mejor
+					if (x>xfin) x=xfin;
+
+					c2=src_YUV[0][y*img.width+x_sc];
+					
+					if (x_sc==xini) 
+					{
+						c1=c2;
+						//nearest neighbour:copy sample into ppp/2 pixels
+						for (int i=xini;i<=x;i++)
+						{
+							//result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+							result_YUV[0][y*img.width+i]=c1;
+						}
+					}// if x_sc==xini
+
+					else  // x_sc is not xini
+					{
+						
+						float alfa=(float) (c2-c1)/(x-x_anti);
+						float j=1f;
+						
+						for (int i=x_anti+1;i<=x;i++)
+						{
+							//result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+							result_YUV[0][y*img.width+i]=c1+(int)(alfa*j);
+							j++;
+						}
+						 if (x_sc==xini+lx_sc-1) //final segment. copy ppp/2 pixels
+						    {
+							  for (int i=x+1;i<xini+lx;i++)
+						  	  {
+								//result_YUV[0][i*img.width+x]=src_YUV[0][y_sc*img.width+x];
+								  result_YUV[0][y*img.width+i]=c2;
+							  }
+						    }
+					}
+					c1=c2;
+					x_anti=x;
+					xf+=pppx/2f;//from last ppp
+					pppx+=grx_sc;
+					//xf+=pppx;///2;//ok
+					xf+=pppx/2f;//from new ppp
+				}//x
+				ppp_xa+=gryax_sc;
+				ppp_xb+=grybx_sc;
+			}//y
+		}	
+		//*******************************************************************
+//*********************************************************************************	
+//
+//  NEW SUPERRESOLUTION INTERPOLATION FUNCTIONS NNSR: nearest reighbour super RES
+//
+//*********************************************************************************
+			//*******************************************************************
+				/**
+				 * vertical interpolation in neighbour mode + lineal
+				 *   NEAREST NEIGHBOUR LINEAR (NNL)
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateNNSRV_001( int[][] src_YUV, int[][] result_YUV)
+				{
+					float lenx=lx_sc;
+			//lenx=lx;
+					//gradient PPPy side c
+					float grycy_sc=(ppp[1][1]-ppp[1][0])/(lenx-1);//lya_sc;
+					//gradient PPPy side d
+					float grydy_sc=(ppp[1][3]-ppp[1][2])/(lenx-1);
+
+					//en la vertical no hace falta porque el bloque esta comprimido y no desplazado
+					float ppp_yc=ppp[1][0];//-grycy_sc*(ppp[0][0]/2)*((lx_sc)/(lx));
+					float ppp_yd=ppp[1][2];//-grydy_sc*(ppp[0][2]/2)*((lx_sc)/(lx));
+
+					// pppy initialized to ppp_yc
+					float pppy=ppp_yc; // only for gradient calculation
+
+					//input image is downsampled_YUV. block width is lx_sc
+					int y=0;
+
+					//dont scan lx but lenx. ( lenx value is lx or lx_sc)
+					for (int x=xini;x<xini+lenx;x++)
+					{
+						float gry_sc=0;
+						//if (ppp_yc!=ppp_yd) gry_sc=(2*ly-2*ppp_yc*(ly_sc)+ppp_yc-ppp_yd)/((ly_sc-1)*ly_sc);
+
+						gry_sc=(ppp_yd-ppp_yc)/(ly_sc-1);
+						
+						//ppp_yc is updated at each iteration
+						pppy=ppp_yc;
+						//pppy=ppp_yc/2f+0.5f;//first segment ends at the middle ***
+						int c0=0; // previous color. no needed 
+						int c1=0; // pixel color
+						int c2=0; //next pixel
+						
+						
+						//float tot_ppp=0f;
+						
+						//aqui pppy ya tiene el valor inicial
+						//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						
+						//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						//float yf=yini+pppy/2-1;//si pongo -1 entonces tendre que pintar de c
+						float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						if (yf<yini) yf=yini;
+						
+						//previous interpolated y coordinate
+						int y_anti=yini-1;//(int)(yf-pppy+0.5f);
+						
+						
+						// bucle for vertical scanline 
+						// scans the downsampled image, pixel by pixel
+						
+						//coordenadas de los otros pixeles para superres
+						//---------------------------------------------------
+						int xprev=x-1;
+						if (xprev<xini) xprev=xini;
+						int xnext=x+1;
+						if (xnext>=xini+lenx) xnext=(int)(xini+lenx-1);
+						
+						
+						float ultimo=1f;//ultimo label
+						for (int y_sc=yini;y_sc<yini+ly_sc;y_sc++)
+						{
+							
+							// aqui en cada iteracion debo identificar el tipo de microbloque en el que estoy
+							//--------------------------------------------------------------------------------
+							
+							//coordenadas de cada uno de los 3 pixeles C0, C1, C2
+							//----------------------------------------------------
+							int y_c1=y_sc;
+							
+							int y_c0=y_c1-1;
+							if (y_c0<yini) y_c0=(int)(yini);
+							
+							int y_c2=y_c1+1;
+							if (y_c2>=yini+ly_sc) y_c2=(int)(yini+ly_sc-1);
+							
+							
+							
+							
+							//colores
+							//-------
+							c0=src_YUV[0][y_c0*img.width+x];
+							c1=src_YUV[0][y_c1*img.width+x];
+							c2=src_YUV[0][y_c2*img.width+x];
+							
+							//hops [0..8], siendo el 4 el nulo
+							//-----
+							
+							//hops que definen el microtipo (son 4)
+							int h4=img.hops[0][y_c1*img.width+x];
+							if (h4<4) h4=4+(4-h4);//lo paso a positivo
+							int h5=img.hops[0][y_c1*img.width+xnext];
+							if (h5<4) h5=4+(4-h5);//lo paso a positivo
+							int h7=img.hops[0][y_c2*img.width+x];
+							if (h7<4) h7=4+(4-h7);//lo paso a positivo
+							int h8=img.hops[0][y_c2*img.width+xnext];
+							if (h8<4) h8=4+(4-h8);//lo paso a positivo
+							
+							System.out.println ("h4:"+h4+"  h5:"+h5+"  h7:"+h7+"   h8:"+h8);
+							
+							//hops fronterizos (no se usan)
+							int h0=img.hops[0][y_c0*img.width+xprev];
+							int h1=img.hops[0][y_c0*img.width+x];
+							int h2=img.hops[0][y_c0*img.width+xnext];
+							int h3=img.hops[0][y_c1*img.width+xprev];
+							int h6=img.hops[0][y_c2*img.width+xprev];
+							
+							//labels fronterizos
+							float l0=img.label_YUV[0][y_c0*img.width+xprev];
+							float l1=img.label_YUV[0][y_c0*img.width+x];
+							
+							if (y_c0==yini) l1=1f;
+							
+							float l2=img.label_YUV[0][y_c0*img.width+xnext];
+							float l3=img.label_YUV[0][y_c1*img.width+xprev];
+							float l6=img.label_YUV[0][y_c2*img.width+xprev];
+							
+									
+							
+							
+							//tipo de microbloque (hay 4 tipos + 1)
+							//------------------------------------------------
+							//cada microtipo tiene una forma diferente de colorear en esta interpolacion V
+							//y una forma distinta de etiquetar
+							//los pixeles los he denotado asi:
+							
+							
+							int microtype=0;// bloque nulo
+							int umbral=6;
+							
+							//valores default para microtype nulo
+							float labelini=ultimo;//l1;//labelini debe ser el label del pixel superior
+							float labelfin=1f;
+							microtype=0;
+							
+							//diagonales
+							if (h4<umbral && h5>=umbral &&  h7>=umbral && h8<umbral)	{microtype=32; labelfin=0.0f;}
+							else if (h4>=umbral  && h5<umbral && h7<umbral && h8>=umbral)	{microtype=33;labelfin=1f;}
+							
+							//microdiagonales
+							else if (h4>=umbral  && h5<umbral && h7<umbral && h8<umbral)	{microtype=41;labelfin=0f;}
+							else if (h4<umbral  && h5>=umbral && h7<umbral && h8<umbral)	{microtype=42;labelfin=1f;}
+							else if (h4<umbral  && h5<umbral && h7>=umbral && h8<umbral)	{microtype=43;labelfin=1f;}
+							
+							//labelfin=1f;//0.5f;
+							System.out.println ("micro:"+microtype);
+							
+							System.out.println ("itera:");
+							
+							//integer interpolated y coordinate 
+							y=(int) (yf+0.5f);
+							if (y>yfin) y=yfin;//esta protección no hace falta
+
+							//pintado de color
+							
+							//nulo
+							if (microtype==0) 
+							{
+							for (int i=y_anti+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}	
+							}
+							else if (microtype==33) 
+							{
+							for (int i=y_anti+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}	
+							}
+							//diagonal "/"
+							else
+							{
+								for (int i=y_anti+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}	
+							}
+							
+							result_YUV[0][(y_anti+1)*img.width+x]=255;
+							for (int i=y_anti+1;i<=y;i++)
+							{
+							
+								result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+							
+								
+							}	
+							
+							/*
+							else if (microtype!=3) 
+							{
+							for (int i=y_anti+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}	
+							}
+							else //borde H
+							{
+								int y1=y_anti+(y-y_anti)/2;
+								for (int i=y_anti+1;i<=y1;i++)
+									{
+									
+										result_YUV[0][i*img.width+x]=c0;//src_YUV[0][yini*img.width+x];
+									
+										
+									}	
+								for (int i=y1+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}
+							}
+							*/
+							//calculo de etiquetas
+							//--------------------
+							//alfa se calcula igual para todos los bloques
+							float alfa =(labelfin-labelini)/pppy;//(y-y_anti+1);
+							
+							//ahora relleno la etiqueta
+							int j=0;//al ser cero, el primer pixel queda con labelini, que es lo correcto para
+							//garantizar la continuidad
+							
+							//System.out.println ("------labeling------");
+							for (int i=y_anti+1;i<=y;i++)
+							{
+								
+								
+								img.label_YUV[0][i*img.width+x]=labelini+j*alfa;//src_YUV[0][yini*img.width+x];
+								j++;
+								//System.out.println("type:"+microtype+"  ,y="+i+", x="+x+" , label="+ img.label_YUV[0][i*img.width+x]);
+								ultimo=img.label_YUV[0][i*img.width+x];
+							}	
+							
+							
+							
+							
+							c1=c2;
+							y_anti=y;
+							//tot_ppp=pppy/2f;
+							//yf+=pppy/2f; ///from last ppp
+							pppy+=gry_sc;
+							//yf+=pppy/2;///2f;//from new ppp
+							//tot_ppp+=pppy/2f;
+							yf+=pppy;
+						}//y
+						ppp_yc+=grycy_sc;
+						ppp_yd+=grydy_sc;
+					}//x
+				}	
+				//*******************************************************************
+				/**
+				 * horizontal interpolation in neighbour+ LINEAR mode
+				 * 
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateNNSRH_001( int[][] src_YUV, int[][] result_YUV)
+				{
+
+					float leny=ly;
+			//leny=ly_sc;
+					float gryax_sc=0;
+					//gradient x of side a
+					if (ppp[0][2]!=ppp[0][0])
+						gryax_sc=(ppp[0][2]-ppp[0][0])/(leny-1);//lya_sc;
+					float grybx_sc=0;
+					if (ppp[0][3]!=ppp[0][1])
+						grybx_sc=(ppp[0][3]-ppp[0][1])/(leny-1);//b_sc;
+
+					//initial ppp values of sides "a" and "b"
+					float ppp_xa=ppp[0][0];
+					float ppp_xb=ppp[0][1];
+
+
+					// pppx is initialized to ppp_xa
+					float pppx=ppp_xa; // only for gradient calculation
+					
+
+					int x=0;
+					//float grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);
+					int x_anti=0;
+
+
+					for (int y=yini;y<yini+leny;y++)
+					{
+						//starts at side c ( which is y==yini)
+						float grx_sc=0;
+
+						//if (ppp_xa!=ppp_xb) grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);				
+						grx_sc=(ppp_xb-ppp_xa)/(lx_sc-1);
+						
+						pppx=ppp_xa;
+						//pppx=ppp_xa/2f;//first segment ends at the middle ***
+						
+						int ca=0; // previous color not exist. updated after each iteration
+						int cb=0; //new color updated at each iteration
+
+						
+						// sample 
+
+						float xf=xini+pppx-1;// -1 because xini exists
+						//float xf=xini+pppx/2-1;// -1 because xini exists
+						if (xf<xini)xf=xini;
+						
+						x_anti=xini-1;//(int)(xf-pppx+0.5f);
+
+						
+						
+						
+						// bucle for horizontal scanline 
+						for (int x_sc=xini;x_sc<xini+lx_sc;x_sc++)
+						{
+							//if ( x_sc==xini+lx_sc-1) xf=xfin;
+
+							x=(int) (xf+0.5f);
+							//x=(int) (xf+1f);//queda mejor
+							if (x>xfin) x=xfin;
+
+							//int x0=x_sc-1;
+							int xa=x_sc;
+							int xb=x_sc+1;
+							if (xb==xini+lx_sc) xb=(int)(xini+lx_sc-1);
+							
+							 ca=src_YUV[0][y*img.width+xa];//color de la muestra A
+							
+							 cb=src_YUV[0][y*img.width+xb];//color de la muestra B
+							
+							//ahora voy a coger el valor donde finaliza ca y comienza cb, que es la etiqueta						
+							int num_pix=(int)((x_anti+1)+pppx*img.label_YUV[0][y*img.width+x_sc]+0.5f);
+							//int num_pix=(int)((x_anti+1)+pppx*img.label_YUV[0][y*img.width+x_sc]);
+							System.out.println ("num_pix:"+num_pix);
+							//tramo de ca
+							for (int i=x_anti+1;i<num_pix;i++)
+							  {
+								result_YUV[0][y*img.width+i]=ca;//0;
+							 }
+							//tramo de cb
+							for (int i=num_pix;i<=x;i++)
+							  {
+									result_YUV[0][y*img.width+i]=cb;
+							  }
+								
+							
+							cb=ca;
+							x_anti=x;
+							//xf+=pppx/2f;//from last ppp
+							pppx+=grx_sc;
+							xf+=pppx;///2;//ok
+							//xf+=pppx/2f;//from new ppp
+						}//x
+						ppp_xa+=gryax_sc;
+						ppp_xb+=grybx_sc;
+					}//y
+				}	
+				//*******************************************************************	
+				
+				
+//0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+				//*******************************************************************
+				/**
+				 * vertical interpolation in neighbour mode + lineal
+				 *   NEAREST NEIGHBOUR LINEAR (NNL)
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateNNSRV( int[][] src_YUV, int[][] result_YUV)
+				{
+					float lenx=lx_sc;
+			//lenx=lx;
+					//gradient PPPy side c
+					float grycy_sc=(ppp[1][1]-ppp[1][0])/(lenx-1);//lya_sc;
+					//gradient PPPy side d
+					float grydy_sc=(ppp[1][3]-ppp[1][2])/(lenx-1);
+
+					//en la vertical no hace falta porque el bloque esta comprimido y no desplazado
+					float ppp_yc=ppp[1][0];//-grycy_sc*(ppp[0][0]/2)*((lx_sc)/(lx));
+					float ppp_yd=ppp[1][2];//-grydy_sc*(ppp[0][2]/2)*((lx_sc)/(lx));
+
+					// pppy initialized to ppp_yc
+					float pppy=ppp_yc; // only for gradient calculation
+
+					//input image is downsampled_YUV. block width is lx_sc
+					int y=0;
+
+					//dont scan lx but lenx. ( lenx value is lx or lx_sc)
+					for (int x=xini;x<xini+lenx;x++)
+					{
+						float gry_sc=0;
+						//if (ppp_yc!=ppp_yd) gry_sc=(2*ly-2*ppp_yc*(ly_sc)+ppp_yc-ppp_yd)/((ly_sc-1)*ly_sc);
+
+						gry_sc=(ppp_yd-ppp_yc)/(ly_sc-1);
+						
+						//ppp_yc is updated at each iteration
+						pppy=ppp_yc;
+						//pppy=ppp_yc/2f+0.5f;//first segment ends at the middle ***
+						int c0=0; // previous color 
+						int c1=0; // pixel color
+						int c2=0; //next pixel
+						
+						
+						//float tot_ppp=0f;
+						
+						//aqui pppy ya tiene el valor inicial
+						//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						
+						//float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						//float yf=yini+pppy/2-1;//si pongo -1 entonces tendre que pintar de c
+						float yf=yini+pppy-1;//si pongo -1 entonces tendre que pintar de c
+						if (yf<yini) yf=yini;
+						
+						//previous interpolated y coordinate
+						int y_anti=yini-1;//(int)(yf-pppy+0.5f);
+						
+						
+						// bucle for vertical scanline 
+						// scans the downsampled image, pixel by pixel
+						
+						//coordenadas de los otros pixeles para superres
+						//---------------------------------------------------
+						int xprev=x-1;
+						if (xprev<xini) xprev=xini;
+						int xnext=x+1;
+						if (xnext>=xini+lenx) xnext=(int)(xini+lenx-1);
+						
+						for (int y_sc=yini;y_sc<yini+ly_sc;y_sc++)
+						{
+							
+							// aqui en cada iteracion debo identificar el tipo de microbloque en el que estoy
+							//--------------------------------------------------------------------------------
+							
+							//coordenadas de cada uno de los 3 pixeles C0, C1, C2
+							//----------------------------------------------------
+							int y_c1=y_sc;
+							
+							int y_c0=y_c1-1;
+							if (y_c0<yini) y_c0=(int)(yini);
+							
+							int y_c2=y_c1+1;
+							if (y_c2>=yini+ly_sc) y_c2=(int)(yini+ly_sc-1);
+							
+							
+							
+							
+							//colores
+							//-------
+							c0=src_YUV[0][y_c0*img.width+x];
+							c1=src_YUV[0][y_c1*img.width+x];
+							c2=src_YUV[0][y_c2*img.width+x];
+							
+							//hops [0..8], siendo el 4 el nulo
+							//-----
+							int h0=img.hops[0][y_c0*img.width+x];
+							int h1=img.hops[0][y_c1*img.width+x];
+							int h2=img.hops[0][y_c2*img.width+x];
+							
+							//tipo de microbloque (hay 4 tipos + 1)
+							//------------------------------------------------
+							//cada microtipo tiene una forma diferente de colorear en esta interpolacion V
+							//y una forma distinta de etiquetar
+							//los pixeles los he denotado asi:
+							//306
+							//718
+							//524
+							
+							int microtype=0;// hop nulo o ausencia de borde
+							int umbral=0;
+							if (h1!=4) microtype=-1;
+							System.out.println("h1="+h1);
+							//if (h2>4+umbral || h2<4-umbral) microtype=-1;
+							
+							if (microtype==-1)
+							{
+								//estamos aqui porque hay un hop en el pixel que vamos a interpolar
+								//tipo 1
+								//  * 
+								// *
+								int h5=img.hops[0][y_c2*img.width+xprev];
+								int h6=img.hops[0][y_c0*img.width+xnext];
+								
+								int h3=img.hops[0][y_c0*img.width+xprev];
+								int h4=img.hops[0][y_c2*img.width+xnext];
+								
+								int h7=img.hops[0][y_c1*img.width+xprev];
+								int h8=img.hops[0][y_c1*img.width+xnext];
+								
+								System.out.println(""+h3+";"+h0+";"+h6);
+								System.out.println(""+h7+";"+h1+";"+h8);
+								System.out.println(""+h5+";"+h2+";"+h4);
+								
+								//h5=4;h6=4;h3=4;h4=4;
+								
+									if ((h0>4+umbral || h0<4-umbral) && 
+										(h2>4+umbral || h2<4-umbral) )
+										{microtype=4;}
+									
+										
+								 	
+								 	 if ((h5>4+umbral || h5<4-umbral) && 
+											(h6>4+umbral || h6<4-umbral) )
+											{microtype=1; }
+								 	else if ((h7>4+umbral || h7<4-umbral) && 
+											(h8>4+umbral || h8<4-umbral) )
+											{microtype=3;}
+								 	else if  ((h3>4+umbral || h3<4-umbral) && 
+											(h4>4+umbral || h4<4-umbral) )
+											{microtype=2;}
+								 	else if ((h0>4+umbral || h0<4-umbral) && 
+											(h2>4+umbral || h2<4-umbral) )
+											{microtype=4;}
+										
+									
+								//si no se ha detectado ningun tipo, se considera el tipo cero
+								else
+									microtype=0;	
+								
+								
+								
+							}
+							
+							System.out.println ("itera:");
+							
+							//integer interpolated y coordinate 
+							y=(int) (yf+0.5f);
+							if (y>yfin) y=yfin;//esta protección no hace falta
+
+							//pintado de color
+							if (microtype!=3) 
+							{
+							for (int i=y_anti+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}	
+							}
+							else //borde H
+							{
+								int y1=y_anti+(y-y_anti)/2;
+								for (int i=y_anti+1;i<=y1;i++)
+									{
+									
+										result_YUV[0][i*img.width+x]=c0;//src_YUV[0][yini*img.width+x];
+									
+										
+									}	
+								for (int i=y1+1;i<=y;i++)
+								{
+								
+									result_YUV[0][i*img.width+x]=c1;//src_YUV[0][yini*img.width+x];
+								
+									
+								}
+							}
+							
+							//calculo de etiquetas
+							//--------------------
+							//ya puedo calcular alfa para las etiquetas
+							float alfa=0;
+							float labelini=0;
+							
+							switch (microtype)
+							{
+							
+							case 0: //  x
+								alfa =0f;
+								labelini=0;
+								break;
+							
+							case 1: //  /
+								alfa =-1f/pppy;
+								labelini=1;
+								break;
+							case 2:// \
+								alfa =1f/pppy;
+								labelini=0;
+								break;
+							case 3:// |
+								alfa =0f;
+								labelini=1;//0.5f;
+								break;
+							case 4:	// -
+								alfa =0f;
+								labelini=0;
+								break;
+								
+							}
+							//ahora relleno la etiqueta
+							int j=0;
+							System.out.println ("------labeling------");
+							for (int i=y_anti+1;i<=y;i++)
+							{
+								
+								
+								img.label_YUV[0][i*img.width+x]=labelini+j*alfa;//src_YUV[0][yini*img.width+x];
+								j++;
+								System.out.println("type:"+microtype+"  ,y="+i+", x="+x+" , label="+ img.label_YUV[0][i*img.width+x]);
+								
+							}	
+							
+							
+							
+							
+							c1=c2;
+							y_anti=y;
+							//tot_ppp=pppy/2f;
+							//yf+=pppy/2f; ///from last ppp
+							pppy+=gry_sc;
+							//yf+=pppy/2;///2f;//from new ppp
+							//tot_ppp+=pppy/2f;
+							yf+=pppy;
+						}//y
+						ppp_yc+=grycy_sc;
+						ppp_yd+=grydy_sc;
+					}//x
+				}	
+				//*******************************************************************
+				/**
+				 * horizontal interpolation in neighbour+ LINEAR mode
+				 * 
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateNNSRH( int[][] src_YUV, int[][] result_YUV)
+				{
+
+					float leny=ly;
+			//leny=ly_sc;
+					float gryax_sc=0;
+					//gradient x of side a
+					if (ppp[0][2]!=ppp[0][0])
+						gryax_sc=(ppp[0][2]-ppp[0][0])/(leny-1);//lya_sc;
+					float grybx_sc=0;
+					if (ppp[0][3]!=ppp[0][1])
+						grybx_sc=(ppp[0][3]-ppp[0][1])/(leny-1);//b_sc;
+
+					//initial ppp values of sides "a" and "b"
+					float ppp_xa=ppp[0][0];
+					float ppp_xb=ppp[0][1];
+
+
+					// pppx is initialized to ppp_xa
+					float pppx=ppp_xa; // only for gradient calculation
+					
+
+					int x=0;
+					//float grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);
+					int x_anti=0;
+
+
+					for (int y=yini;y<yini+leny;y++)
+					{
+						//starts at side c ( which is y==yini)
+						float grx_sc=0;
+
+						//if (ppp_xa!=ppp_xb) grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);				
+						grx_sc=(ppp_xb-ppp_xa)/(lx_sc-1);
+						
+						pppx=ppp_xa;
+						//pppx=ppp_xa/2f;//first segment ends at the middle ***
+						
+						int c0=0; // previous color not exist. updated after each iteration
+						int c1=0; //new color updated at each iteration
+
+						
+						// sample 
+
+						float xf=xini+pppx-1;// -1 because xini exists
+						//float xf=xini+pppx/2-1;// -1 because xini exists
+						if (xf<xini)xf=xini;
+						
+						x_anti=xini-1;//(int)(xf-pppx+0.5f);
+
+						
+						
+						
+						// bucle for horizontal scanline 
+						for (int x_sc=xini;x_sc<xini+lx_sc;x_sc++)
+						{
+							//if ( x_sc==xini+lx_sc-1) xf=xfin;
+
+							x=(int) (xf+0.5f);
+							//x=(int) (xf+1f);//queda mejor
+							if (x>xfin) x=xfin;
+
+							int x0=x_sc-1;
+							if (x0==xini-1) x0=xini;
+							
+							c0=src_YUV[0][y*img.width+x0];
+							
+							c1=src_YUV[0][y*img.width+x_sc];
+							
+							//ahora voy a coger el valor donde finaliza c0 y comienza c1, que es la etiqueta						
+							int num_pix=(int)((x_anti+1)+pppx*img.label_YUV[0][y*img.width+x_sc]+0.5f);
+							
+							System.out.println ("num_pix:"+num_pix);
+							//tramo de c0
+							for (int i=x_anti+1;i<num_pix;i++)
+							  {
+								result_YUV[0][y*img.width+i]=c0;//0;
+							 }
+							//tramo de c1
+							for (int i=num_pix;i<=x;i++)
+							  {
+									result_YUV[0][y*img.width+i]=c1;
+							  }
+								
+							
+							c0=c1;
+							x_anti=x;
+							//xf+=pppx/2f;//from last ppp
+							pppx+=grx_sc;
+							xf+=pppx;///2;//ok
+							//xf+=pppx/2f;//from new ppp
+						}//x
+						ppp_xa+=gryax_sc;
+						ppp_xb+=grybx_sc;
+					}//y
+				}	
+				//*******************************************************************	
+				//*******************************************************************
+				/**
+				 * vertical interpolation in EPX mode
+				 *  
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateEPXV_001( int[][] src_YUV, int[][] result_YUV)
+				{
+					float lenx=lx_sc;
+			//lenx=lx;
+					//gradient PPPy side c
+					float grycy_sc=(ppp[1][1]-ppp[1][0])/(lenx-1);//lya_sc;
+					//gradient PPPy side d
+					float grydy_sc=(ppp[1][3]-ppp[1][2])/(lenx-1);
+
+					//en la vertical no hace falta porque el bloque esta comprimido y no desplazado
+					float ppp_yc=ppp[1][0];//-grycy_sc*(ppp[0][0]/2)*((lx_sc)/(lx));
+					float ppp_yd=ppp[1][2];//-grydy_sc*(ppp[0][2]/2)*((lx_sc)/(lx));
+
+					// pppx initialized to ppp_yc
+					float pppy=ppp_yc;
+
+					//input image is downsampled_YUV. block width is lx_sc
+					int y=0;
+
+					//dont scan lx but lenx. ( lenx value is lx or lx_sc)
+					for (int x=xini;x<xini+lenx;x++)
+					{
+						float gry_sc=0;
+						//if (ppp_yc!=ppp_yd) gry_sc=(2*ly-2*ppp_yc*(ly_sc)+ppp_yc-ppp_yd)/((ly_sc-1)*ly_sc);
+
+						gry_sc=(ppp_yd-ppp_yc)/(ly_sc-1);
+						
+						//ppp_yc is updated at each iteration
+						pppy=ppp_yc;//-grycy_sc;
+
+						float yf=yini+pppy-1f;//1;
+
+						//previous interpolated y coordinate
+						int y_anti=(int)(yf-pppy+0.5f);
+
+						// bucle for horizontal scanline 
+						// scans the downsampled image, pixel by pixel
+						for (int y_sc=yini;y_sc<yini+ly_sc;y_sc++)
+						{
+							//end of block in nearest neighbour mode
+							//if ( y_sc==yini+ly_sc-1) yf=yfin;
+
+							//integer interpolated y coordinate 
+							y=(int) (yf+0.5f);
+							if (y>yfin) y=yfin;//esta protección no hace falta
+
+							if (y_sc==yini) 
+							{
+								//nearest neighbour mode: copy sample into ppp/2 pixels
+								for (int i=yini;i<=y;i++)
+								{
+									result_YUV[0][i*img.width+x]=src_YUV[0][yini*img.width+x];
+								}	
+							}
+							// y_sc is not yini  
+							else 
+							{
+								for (int i=y_anti+1;i<=y;i++)
+								{
+									result_YUV[0][i*img.width+x]=src_YUV[0][y_sc*img.width+x];
+								}
+							}
+							y_anti=y;
+							pppy+=gry_sc;
+							yf+=pppy;//ok
+						}//y
+						ppp_yc+=grycy_sc;
+						ppp_yd+=grydy_sc;
+					}//x
+				}	
+				//*******************************************************************
+				/**
+				 * horizontal interpolation in EPX mode
+				 * 
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateEPXH_001( int[][] src_YUV, int[][] result_YUV)
+				{
+
+					float leny=ly;
+			//leny=ly_sc;
+					float gryax_sc=0;
+					//gradient x of side a
+					if (ppp[0][2]!=ppp[0][0])
+						gryax_sc=(ppp[0][2]-ppp[0][0])/(leny-1);//lya_sc;
+					float grybx_sc=0;
+					if (ppp[0][3]!=ppp[0][1])
+						grybx_sc=(ppp[0][3]-ppp[0][1])/(leny-1);//b_sc;
+
+					//initial ppp values of sides "a" and "b"
+					float ppp_xa=ppp[0][0];
+					float ppp_xb=ppp[0][1];
+
+
+					// pppx is initialized to ppp_xa
+					float pppx=ppp_xa;
+
+
+					int x=0;
+					//float grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);
+					int x_anti=0;
+
+
+					for (int y=yini;y<yini+leny;y++)
+					{
+						//starts at side c ( which is y==yini)
+						float grx_sc=0;
+
+						//if (ppp_xa!=ppp_xb) grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);				
+						grx_sc=(ppp_xb-ppp_xa)/(lx_sc-1);
+						
+						pppx=ppp_xa;
+						// sample 
+
+						float xf=xini+pppx-1;// -1 because xini exists
+
+						x_anti=(int)(xf-pppx+0.5f);
+
+						// bucle for horizontal scanline 
+						for (int x_sc=xini;x_sc<xini+lx_sc;x_sc++)
+						{
+							//if ( x_sc==xini+lx_sc-1) xf=xfin;
+
+							x=(int) (xf+0.5f);
+							if (x>xfin) x=xfin;
+
+							if (x_sc==xini) 
+							{
+								//nearest neighbour:copy sample into ppp/2 pixels
+								for (int i=xini;i<=x;i++)
+								{
+									result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+								}
+							}// if x_sc==xini
+
+							else  // x_sc is not xini
+							{
+								for (int i=x_anti+1;i<=x;i++)
+								{
+									result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+									//if (y==b.yini+leny-1) result_YUV[0][y*img.width+i]=255;
+								}
+							}
+
+							x_anti=x;
+							pppx+=grx_sc;
+							xf+=pppx;///2;//ok
+						}//x
+						ppp_xa+=gryax_sc;
+						ppp_xb+=grybx_sc;
+					}//y
+				}	
+				//*******************************************************************
+//***********************************************************************************
+// esta funcion implementa el algoritmo EPX y retorna 4 pixeles nuevos a partir del pixel
+// de color O (original)
+//  A
+// COB
+//  D				
+public int[] getEPX(int a, int b, int c, int d, int o)
+{
+	int[] res=new int[4];
+	
+	
+	return res;
+}
 }//end class Block

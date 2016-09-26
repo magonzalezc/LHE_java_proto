@@ -123,7 +123,7 @@ public float[] compressBasicFrame()
 	//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
 	
 	lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
-	
+	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
 	//PRblock.img=img;
 	//grid.computeMetrics();//compute metrics of all Prblocks, equalize & quantize
 	//ready to save the result in BMP format

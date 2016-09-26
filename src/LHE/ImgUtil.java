@@ -105,6 +105,11 @@ public class ImgUtil {
 	public int [][] y2menosy1;
 	public int [][] error;
 	
+	
+	//label, experimental for superresolution
+	public float[][] label_YUV;// label[0] is the label of luminance, label[1] and label[2] are chrominance
+	
+	
 	//color mode 0:444 , 1:422 2:420 3:400
 	//color_mode=3 is black&white
 	public int color_mode=0;
@@ -125,6 +130,9 @@ height=orig.height;
 	YUV=new int[3][width*height];
 	LHE_YUV=new int[3][width*height];
 	hops=new int[3][width*height];
+	
+	//labels . experimental
+	label_YUV=new float[3][width*height];
 	
 	downsampled_hops=new int[3][width*height];	
 	
@@ -178,6 +186,10 @@ height=orig.height;
 			frontierDownH_YUV[component][i]=orig.frontierDownH_YUV[component][i];
 			frontierInterV_YUV[component][i]=orig.frontierInterV_YUV[component][i];
 			frontierDownV_YUV[component][i]=orig.frontierDownV_YUV[component][i];
+			
+			
+			//labels. experimental
+			label_YUV[component][i]=orig.label_YUV[component][i];
 	}//i
 	}//component
 }
@@ -226,6 +238,16 @@ height=orig.height;
 			{
 				YUV[0][(y*width)/2+x/2]=YUV[0][(y*width)+x];
 			}
+	}
+	//*******************************************************************************
+	public void  getQuarterImgYUV()
+		{
+
+			for (int y=0;y<width;y+=2)
+				for (int x=0;x<height;x+=2)
+				{
+					YUV[0][(y*width)/2+x/2]=YUV[0][(y*width)+x];
+				}
 
 	}
 	public void  createChess()
@@ -289,6 +311,9 @@ height=orig.height;
 		YUV=new int[3][width*height];
 		LHE_YUV=new int[3][width*height];
 		hops=new int[3][width*height];
+		
+		//label.experimental
+		label_YUV=new float[3][width*height];
 		
 		//System.out.println(" estamos en imgtoint w:"+width+"  h:"+height);
 
