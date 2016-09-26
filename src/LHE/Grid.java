@@ -453,7 +453,7 @@ public void savePRtxtJavalanguage(String path_file)
 			{
 				prbl[y][x].computePRmetrics();
 				
-				//prbl[y][x].computePRmetrics4SPS(2,2);
+				//prbl[y][x].computePRmetrics4SPS(4,4);
 				//prbl[y][x].computePRmetricsSPS();
 				//prbl[y][x].computePRmetrics_experimental();
 				
