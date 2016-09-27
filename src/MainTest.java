@@ -384,6 +384,7 @@ public class MainTest {
 		if (interpol.equals("3")) fp.INTERPOL=new String("BICUBIC");
 		else if (interpol.equals("2")) fp.INTERPOL=new String("BILINEAL");
 		else if (interpol.equals("1")) fp.INTERPOL=new String("NN");
+		else if (interpol.equals("7")) fp.INTERPOL=new String("EPX");
 		
 	//	float[] resfp=fp.playFrame( filename);//,true);
 		
@@ -606,8 +607,8 @@ public class MainTest {
 			{
 				System.out.println(" processing file "+ficherosEnDirectorio[i]+" ...");
 			//	img.BMPtoYUV(directorio+"/"+ficherosEnDirectorio[i]);
-				rows[i]=new String("");
-				rowssim[i]=new String("");
+				rows[i]=new String(""+ficherosEnDirectorio[i]+";");
+				rowssim[i]=new String(""+ficherosEnDirectorio[i]+";");
 				float ql_start=-1;
 				for (int bpp_i=0;bpp_i<bbp_number;bpp_i+=1)
 				{
@@ -622,11 +623,14 @@ public class MainTest {
 					rows[i]+=new String(psnrs+";");
 					rowssim[i]+=new String(ssim+";");
 					if (ql_start>=100) break;
+					
+					//System.exit(0);
 				}
 				
 			}
 			System.out.println("");
 			System.out.println("------------------TABLE OF RESULTS----------------------------------");
+			System.out.print("filename;");
 			for (int i=0;i<bbp_number;i++)System.out.print(table_bpp[i]+";");
 			System.out.println("");
 			for (int i=0;i<ficherosEnDirectorio.length;i++)
