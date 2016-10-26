@@ -4070,6 +4070,9 @@ public void quantizeOneHopPerPixel(int[] hops,int[] result_YUV)
 	boolean last_small_hop=false;// indicates if last hop is small. used for h1 adaptation mechanism
 	int rmax=25;
 	
+	//rmax=20;//experimento
+	//min_hop1=1;
+	
 	for (int y=0;y<img.height;y++)  {
 		for (int x=0;x<img.width;x++)  {
 
@@ -4354,8 +4357,138 @@ public void quantizeOneHopPerPixel_prueba(int[] hops,int[] result_YUV)
 	
 	
 }//end function
+//*******************************************************************************
+public void quantizeOneHopPerPixelBin(int[] hops,int[] result_YUV)
+{
+	
+	
+	int max_hop1=16; //hop1 interval 4..10
+	int min_hop1=4;//4;// minimum value of hop1 is 4 
+	int start_hop1=(max_hop1+min_hop1)/2;
+	
+	
+	int hop1=start_hop1;
+	int hop0=0; // predicted luminance signal
+	int emin;//error of predicted signal
+	int hop_number=4;//pre-selected hop // 4 is NULL HOP
+	int oc=0;// original color
+	int pix=0;//pixel possition, from 0 to image size        
+	boolean last_small_hop=false;// indicates if last hop is small. used for h1 adaptation mechanism
+	//int rmax=25;
+	
+	
+	for (int y=0;y<img.height;y++)  {
+		for (int x=0;x<img.width;x++)  {
 
+			//original image luminances are in the array img.YUV[0]
+			// chrominance signals are stored in img.YUV[1] and img.YUV[2] but they are not
+			// used in this function, designed for learning LHE basics
+			oc=img.YUV[0][pix];
 
+			//prediction of signal (hop0) , based on pixel's coordinates 
+			//----------------------------------------------------------
+			if ((y>0) &&(x>0) && x!=img.width-1){
+				hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+			}
+			else if ((x==0) && (y>0)){
+				hop0=result_YUV[pix-img.width];
+				last_small_hop=false;
+				hop1=start_hop1;
+			}
+			else if ((x==img.width-1) && (y>0)) {
+				hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;				
+			}else if (y==0 && x>0) {
+				hop0=result_YUV[x-1];
+			}else if (x==0 && y==0) {  
+				hop0=oc;//first pixel always is perfectly predicted! :-)  
+			}			
+
+			//hops computation. 
+			//error initial values 
+			emin=256;//current minimum prediction error 
+			int e2=0;//computed error for each hop 
+			
+			//positive hops computation
+			//-------------------------
+			int h=0;
+			int hfinal=h;
+			hop_number=4;
+			
+			if (oc-hop0>hop1/2) // esta division es una rotacion binaria
+			{
+				
+				if (hop0+hop1>255) h=255-hop0; else h=hop1;
+				hop_number=5;
+				emin=oc-(hop0+h);if (emin<0) emin=-emin;
+				for (int j=6;j<=8;j++) {
+					int salto=h*2; if (hop0+salto>255) salto=255-hop0; 
+					if (hop0+salto>255) break;
+					e2=oc-(hop0+salto);//pccr[hop1][hop0][rmax][j];
+					if (e2<0) e2=-e2;
+					if (e2>=emin) break;
+					
+					emin=e2;
+					hop_number=j;
+					h=salto;
+				}
+				
+				hfinal=h;
+				
+			}
+			//negative hops computation
+			//-------------------------
+			else if (hop0-oc>hop1/2) 
+			{
+				
+				
+				if (hop0-hop1<0) h=hop0; else h=hop1;
+				hop_number=3;
+				emin=hop0-h-oc;if (emin<0) emin=-emin;
+
+				for (int j=2;j>=0;j--) {
+					int salto= h*2;if (hop0-salto<0) salto=hop0;
+					if (hop0-salto<0) break;
+					e2=hop0-salto-oc;//pccr[hop1][hop0][rmax][j];
+					if (e2<0) e2=-e2;
+					if (e2>=emin) break;
+					
+					emin=e2;
+					hop_number=j;
+					h=salto;	
+				}
+				
+				hfinal=-h;
+			
+			}
+
+			//assignment of final color value
+			//--------------------------------
+			result_YUV[pix]=hop0+hfinal;
+					
+			hops[pix]=hop_number; //final hop value
+
+			//tunning hop1 for the next hop ( "h1 adaptation")
+			//------------------------------------------------
+			boolean small_hop=false;
+			if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+			else small_hop=false;     
+
+			if( (small_hop) && (last_small_hop))  {
+				hop1=hop1-1;
+				if (hop1<min_hop1) hop1=min_hop1;
+			} 
+			else {
+				hop1=max_hop1;
+			}
+			
+			//lets go for the next pixel
+			//--------------------------
+			last_small_hop=small_hop;
+			pix++;            
+		}//for x
+	}//for y
+	
+}
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 }

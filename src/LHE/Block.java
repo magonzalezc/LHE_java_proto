@@ -29,7 +29,7 @@ public class Block {
 	public float ly_sc;//length of downsampled ly. Downsampled block is a rectangle
 
 
-	
+	public String downmode="NORMAL"; //normal, SPSoneshot
 
 	// Pixels Per Pixel (real pixels per downsampled pixel)
 	// ppp is "pixels per pixel" array. 4 corners 0,1,2,3 and 4 sides a,b,c,d
@@ -135,10 +135,21 @@ public class Block {
 
 	public void downsampleBlock( boolean bilineal)
 	{
-		//downsampleH(img.YUV,img.intermediate_downsampled_YUV);
+		
+	
+		
+		if (downmode.equals("NORMAL"))
+		{
+		//System	
+	
 		downsampleH_FIX(img.YUV,img.intermediate_downsampled_YUV);
-		//downsampleV(img.intermediate_downsampled_YUV,img.downsampled_YUV);
 		downsampleV_FIX(img.intermediate_downsampled_YUV,img.downsampled_YUV);
+		}
+		else
+		{
+			
+		downsampleSPSOneShot(img.YUV,img.downsampled_YUV);
+		}
 
 	}
 	//*********************************************************************************	
@@ -6996,4 +7007,91 @@ public int[] getEPX(int a, int b, int c, int d, int o)
 	
 	return res;
 }
+
+public void downsampleSPSOneShot( int[][] src_YUV, int[][] result_YUV)
+{
+	//we assume that the block has already rectangle shape, 
+	// during this "Horizontal" processing we fill  the "horizontal_downsampled_YUV" array
+	//gradient PPPx side a
+
+
+	float leny=ly_sc;
+	//float lenx=lx;
+	
+	//gradient side a
+	float gryax_sc=(ppp[0][2]-ppp[0][0])/(leny-1);
+	float gryay_sc=(ppp[1][2]-ppp[1][0])/(leny-1);
+
+	//gradient PPPx side b
+	float grybx_sc=(ppp[0][3]-ppp[0][1])/(leny-1);
+	float gryby_sc=(ppp[1][3]-ppp[1][1])/(leny-1);
+
+	//initialization of ppp at side a and ppp at side b
+	float ppp_xa=ppp[0][0];
+	float ppp_xb=ppp[0][1];
+    float ppp_ya=ppp[1][0];
+    float ppp_yb=ppp[1][1];
+	
+    //System.out.println("ppp_ya="+ppp_ya+"    ppp_yb="+ppp_yb);
+	
+	//dominio down
+	int y_sc=yini;
+	float ya_ini=(int)(yini+ppp_ya/2);
+	float yb_ini=(int)(yini+ppp_yb/2);
+	
+	
+	for (float ya=ya_ini,yb=yb_ini;ya<=yfin;ya+=ppp_ya,yb+=ppp_yb)
+	{
+		//System.out.println("ppp_ya="+ppp_ya+"    ppp_yb="+ppp_yb);
+		float grx_sc=(ppp_xb-ppp_xa)/(lx_sc-1f); //lx_sc -1 steps
+		
+		float gry_sc=(yb-ya)/(lx_sc-1f); //lx_sc -1 steps
+		
+		
+		
+		//initialization of pppx at start of scanline
+		float pppx=ppp_xa;
+		//float pppy=ppp_ya;
+		
+		float xa=xini+pppx/2;
+		
+		//dominio original
+		float y=(int)ya;
+		float x=(int)xa;
+				
+		//System.out.println("xa:"+x+"    ya:"+y);
+		for (int x_sc=xini;x_sc<=downsampled_xfin;x_sc++)
+		{
+			System.out.println("x:"+x+"    y:"+y);
+			if (x>img.width-1) x=img.width-1;
+			if (y>img.height-1) y=img.height-1;
+			if (x<0) x=0;
+			if (y<0) y=0;
+			System.out.println("x:"+x+"    y:"+y);
+			System.out.println("x_sc:"+x_sc+"    y_sc:"+y_sc);
+			int sample=src_YUV[0][(int)y*img.width+(int)x];
+			result_YUV[0][y_sc*img.width+x_sc]=sample;
+			
+			x+=pppx;//ok
+			y+=gry_sc;//OJO ESTE ERA EL ERROR: AQUI SE SUMA EL GRADIENTE Y NO EL PPP
+			
+			pppx+=grx_sc;
+			//pppy+=gry_sc;
+
+		}//x
+		ppp_xa+=gryax_sc;
+		ppp_xb+=grybx_sc;
+		ppp_ya+=gryay_sc;
+		ppp_yb+=gryby_sc;
+		y_sc+=1; //listo para siguiente scanline
+		if (y_sc>=img.height) break;
+
+	}//y
+
+
+}
+
+//****************************************************************************************
+
+
 }//end class Block

@@ -1,6 +1,8 @@
 package LHE;
 import huffman.Huffman;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -30,6 +32,7 @@ private int number_of_threads=1;//for parallel processing. default is 1
 
 public boolean LHE=true;
 
+public String downmode="NORMAL";
 //*****************************************************************
 public FrameCompressor(int number_of_threads)
 {
@@ -79,14 +82,14 @@ public void loadFrameGridPlus( String path_img,int plus)
 	
 }
 //******************************************************************
-public float[] compressBasicFrame( String path_img)
+public float[] compressBasicFrame(String optionratio, String path_img)
 {
 	
 	//load image into memory, transforming into YUV format
 	loadFrame( path_img);
 	
 	//compress the loaded frame 
-	return compressBasicFrame();
+	return compressBasicFrame(optionratio);
 }
 
 
@@ -111,7 +114,7 @@ public float[] compressFrame( String path_img, float cf)
  * @param img
  * @param cf
  */
-public float[] compressBasicFrame()
+public float[] compressBasicFrame(String optionratio)
 {
 	float[] result=new float[2];//PSNR and bitrate
 	
@@ -120,9 +123,17 @@ public float[] compressBasicFrame()
 	//lhe.initGeomR();//initialize hop values 
 	System.out.println(" quantizing into hops...");
 	System.out.println(" result image is ./output_img/BasicLHE_YUV.bmp");
-	//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
 	
-	lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
+	//esta tiene el colin
+	if (optionratio.equals("1"))
+	lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+	
+	
+	//esta no tiene el colin
+	//lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
+	if (optionratio.equals("2"))
+	lhe.quantizeOneHopPerPixelBin(img.hops[0],img.LHE_YUV[0]);
+	
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
 	//PRblock.img=img;
 	//grid.computeMetrics();//compute metrics of all Prblocks, equalize & quantize
@@ -248,6 +259,14 @@ public float[] compressFrame(float ql)
 		//--------------------------------------------------
 		//downsampling
 		
+		/*System.out.println ("down mode?: 0=AVG_NORMAL, 1=SPS_ONESHOT");
+		String option =  readKeyboard();
+		if (option.equals("1")) grid.downmode="SPS_ONESHOT";
+		else
+		 
+		grid.downmode=downmode;
+		*/
+		
 		BynaryEncoder be=new BynaryEncoder(img.width,img.height);
 		int total_bits=0;//total bits taken by the image
 		
@@ -286,7 +305,7 @@ public float[] compressFrame(float ql)
 				//System.out.println("Date() - Time in milliseconds: " + lDateTime1);
 				//for (int cosa=1;cosa<10000;cosa++)
 				//{
-					
+				bi.downmode=downmode;	
 				bi.downsampleBlock(true);//lo de true es mix , no SPS
 				
 			    //}
@@ -632,6 +651,16 @@ public void preCompressFrame( float ql, Grid grid_ant)
 	}
 	//--------------------------------------------------
 }
-
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	public static String readKeyboard()
+	{
+		String data=null;
+		try{
+		BufferedReader keyb=new BufferedReader(new InputStreamReader(System.in))	;
+		data = keyb.readLine(); //keyb.next();
+		}catch(Exception e){System.out.print(e);}
+		return data;
+	}
+		
 //**************************************************************************
 }
