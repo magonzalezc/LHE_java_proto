@@ -4362,7 +4362,7 @@ public void quantizeOneHopPerPixelBin(int[] hops,int[] result_YUV)
 {
 	
 	
-	int max_hop1=16; //hop1 interval 4..10
+	int max_hop1=16;//6; //hop1 interval 4..10
 	int min_hop1=4;//4;// minimum value of hop1 is 4 
 	int start_hop1=(max_hop1+min_hop1)/2;
 	
@@ -4422,7 +4422,7 @@ public void quantizeOneHopPerPixelBin(int[] hops,int[] result_YUV)
 				emin=oc-(hop0+h);if (emin<0) emin=-emin;
 				for (int j=6;j<=8;j++) {
 					int salto=h*2; if (hop0+salto>255) salto=255-hop0; 
-					if (hop0+salto>255) break;
+					//if (hop0+salto>255) break;
 					e2=oc-(hop0+salto);//pccr[hop1][hop0][rmax][j];
 					if (e2<0) e2=-e2;
 					if (e2>=emin) break;
@@ -4447,7 +4447,7 @@ public void quantizeOneHopPerPixelBin(int[] hops,int[] result_YUV)
 
 				for (int j=2;j>=0;j--) {
 					int salto= h*2;if (hop0-salto<0) salto=hop0;
-					if (hop0-salto<0) break;
+					//if (hop0-salto<0) break;
 					e2=hop0-salto-oc;//pccr[hop1][hop0][rmax][j];
 					if (e2<0) e2=-e2;
 					if (e2>=emin) break;
