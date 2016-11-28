@@ -128,6 +128,7 @@ public float[] compressBasicFrame(String optionratio)
 	if (optionratio.equals("1"))
 	lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
 	
+	//lhe.quantizeOneHopPerPixel_R_LHE2(img.hops[0],img.LHE_YUV[0]);
 	
 	//esta no tiene el colin
 	//lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
@@ -178,6 +179,69 @@ public float[] compressBasicFrame(String optionratio)
 	
 	return result;
 }
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+public float[] compressLHE2()
+{
+	float[] result=new float[2];//PSNR and bitrate
+	
+	img.YUVtoBMP("./output_debug/orig_YUV_BN.bmp",img.YUV[0]);
+	
+	//lhe.initGeomR();//initialize hop values 
+	System.out.println(" quantizing into hops...");
+	System.out.println(" result image is ./output_img/LHE2_YUV.bmp");
+	
+	
+	lhe.quantizeOneHopPerPixel_LHE2(img.hops[0],img.LHE_YUV[0]);
+	
+	
+	
+	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
+	//PRblock.img=img;
+	//grid.computeMetrics();//compute metrics of all Prblocks, equalize & quantize
+	//ready to save the result in BMP format
+	img.YUVtoBMP("./output_img/LHE2_YUV.bmp",img.LHE_YUV[0]);
+	
+	//ready to compute PSNR
+	//double psnr=PSNR.printPSNR(this.path_img, "./output_img/BasicLHE_YUV.bmp");
+	double psnr=PSNR.printPSNR("./output_debug/orig_YUV_BN.bmp", "./output_img/LHE2_YUV.bmp");
+	System.out.println(" PSNR LHE2:"+psnr);
+	result[0]=(float)psnr;
+	
+	//ready for compute bit rate
+	BynaryEncoder be=new BynaryEncoder(img.width,img.height);
+	int total_bits=0;//total bits taken by the image
+	
+	//save hops
+	if (DEBUG) img.saveHopsToTxt("./output_debug/hops_LHE2_signed.txt",true);
+	if (DEBUG) img.saveHopsToTxt("./output_debug/hops_LHE2_unsigned.txt",false);
+	
+	//convert hops into symbols...
+	//realmente esto no convierte a bits, sino a simbolos del 1 al 9
+	// de todos modos lo que se usa para calcular luego los bpp son las estadisticas
+	// de los simbolos. es decir, cuantos hay de cada y con huffman se hace
+	be.hopsToBits_v3(img.hops[0],0,0, img.width-1,img.height-1,0,0);
+	
+	be.saveSymbolsToTxt("./output_debug/Symbols_LHE2.txt");
+	
+	
+	//convert symbols into bits...
+	Huffman huff=new Huffman(10);
+	for (int l=0;l<10;l++)
+		{System.out.println(" symbolos ["+l+"]="+be.down_stats_saco[0][l]);
+		
+		}
+	int lenbin=huff.getLenTranslateCodes(be.down_stats_saco[0]);
+	
+	System.out.println("total_hops: "+be.totalhops);
+	System.out.println("image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
+	
+	result[1]=(float)lenbin/(img.width*img.height);
+	
+	return result;
+}
+
+
+
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

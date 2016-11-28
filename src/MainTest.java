@@ -43,6 +43,7 @@ public class MainTest {
 	//System.out.println ("7) decompress a directory of .lhe files ");
 	System.out.println ("6) compute PSNR for a given image origin and degraded image");
 	System.out.println ("7) interpolate seams");
+	System.out.println ("8) compress LHE2");
 	
 	String option =  readKeyboard();
 	System.out.println ("your option is : "+option);
@@ -58,8 +59,49 @@ public class MainTest {
 	else if (option.equals("6")) m.computePSNR();
 	//else if (option.equals("3")) m.performance();
 	else if (option.equals("7")) m.interpolateSeams();
+	else if (option.equals("8")) m.compressImageLHE2();;
 	
 	}
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		public void compressImageLHE2()
+		{
+			System.out.println("you have enter into Basic-LHE");
+			System.out.println ("Enter filename [default=./img/lena.bmp]:");
+			String filename =  readKeyboard();
+			if (filename.equals("")) filename=new String("./img/lena.bmp");
+			System.out.println ("your filename is : "+filename);
+			
+			FrameCompressor fc=new LHE.FrameCompressor(1);
+			fc.DEBUG=true;
+			fc.loadFrame(filename);
+			//solo para pruebas
+			//------------------
+			//fc.img.getQuarterImgYUV();
+			//fc.img.YUVtoBMP("./img/quarter.bmp", fc.img.YUV[0]);
+			//if (1==1)System.exit(0);
+			//------------------
+			
+			//fc.img.YUVtoBMP("./output_debug/orig_YUV_BN.bmp",fc.img.YUV[0]);
+			System.out.println(" width:"+fc.img.width);
+			System.out.println(" height:"+fc.img.height);
+			//fc.loadFrame("./output_debug/orig_YUV_BN.bmp");//load B/W version of the image
+			//System.exit(0);
+			
+			//System.out.println ("choose log ratio");
+			//System.out.println ("1)log ratio=2.5[default]   2) log ratio=2   ");
+			
+			//String option =  readKeyboard();
+			//if (option.equals("")) option="1";
+			//fc.compressBasicFrame(option,filename);
+			fc.compressLHE2();//option,filename);
+			
+			float ssim=MySSIM.getSSIM("./output_debug/orig_YUV_BN.bmp", "./output_img/BasicLHE_YUV.bmp");
+			System.out.println ("SSIM:"+ssim);
+			
+			System.out.println ("OJO QUE LOS BPP NO ESTAN BIEN CALCULADOS EN LHE2. LO QUE ESTA BIEN SON LOS SAMPLES TOTALES");
+			
+		}
+		
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	public void compressImageBasicLHE()
 	{
@@ -84,7 +126,13 @@ public class MainTest {
 		System.out.println(" height:"+fc.img.height);
 		//fc.loadFrame("./output_debug/orig_YUV_BN.bmp");//load B/W version of the image
 		//System.exit(0);
-		fc.compressBasicFrame();//filename);
+		
+		System.out.println ("choose log ratio");
+		System.out.println ("1)log ratio=2.5[default]   2) log ratio=2   ");
+		
+		String option =  readKeyboard();
+		if (option.equals("")) option="1";
+		fc.compressBasicFrame(option,filename);
 		
 		float ssim=MySSIM.getSSIM("./output_debug/orig_YUV_BN.bmp", "./output_img/BasicLHE_YUV.bmp");
 		System.out.println ("SSIM:"+ssim);
@@ -121,12 +169,24 @@ public class MainTest {
 		else ED=true;
 		*/
 		
-		
+		String downmode="NORMAL";
 		
 		System.out.println ("Enter filename [default=./img/lena.bmp]:");
 		String filename =  readKeyboard();
 		if (filename.equals("")) filename=new String("./img/lena.bmp");
 		System.out.println ("your filename is : "+filename);
+		
+		System.out.println ("select 1)AVG_down  or 2)SPS_oneshot_down [default=1]:");
+		String optiondown = readKeyboard();
+		if (optiondown.equals("")) optiondown=new String("1");
+		if ((optiondown.equals("2")))
+		{
+			downmode="SPS_oneShot";
+		}
+		else downmode="NORMAL";
+		
+		
+		
 		
 		System.out.println ("select 1)QL  or 2)% or 3)bpp  [default=1]:");
 		String option = readKeyboard();
@@ -175,6 +235,7 @@ public class MainTest {
 		FrameCompressor fc=new LHE.FrameCompressor(1);
 		fc.DEBUG=debug;
 		
+		fc.downmode=downmode;
 		
 		
 		if (ED==false)fc.MODE=new String("HOMO");
