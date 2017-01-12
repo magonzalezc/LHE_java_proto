@@ -1376,7 +1376,8 @@ System.exit(0);
 					boolean last_small_hop=false;// indicates if last hop is small
 
 					
-					
+					float error_center=0;
+					float error_avg=0;
 					
 					for (int y=0;y<img.height;y++)  {
 						for (int x=0;x<img.width;x++)  {
@@ -1520,6 +1521,12 @@ System.exit(0);
 							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
 							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
 
+							
+							//calculo de errores medios
+							//---------------------------
+							error_center+=(oc-result_YUV[pix]);
+							error_avg+=Math.abs((oc-result_YUV[pix]));
+							
 							//tunning hop1 for the next hop
 							//-------------------------------
 							boolean small_hop=false;
@@ -1554,6 +1561,13 @@ System.exit(0);
 					System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
 					*/
 					System.out.println("quantization done");
+					
+					System.out.println("center of  error:"+error_center/(img.width*img.height));
+					System.out.println("average of  error:"+error_avg/(img.width*img.height));
+					System.out.println("----------------------------------------------------------");
+					
+					
+					
 				}//end function
 				
 				
@@ -5090,7 +5104,7 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 	//LO RELLENA y ENTONCES los BPP no se calculan bien, PUES LUEGO EL PROCESO HUFFMAN RECORRE LOS HOPS
 	//Y PARA QUE NO ENCUENTRE HOPS NULOS LO HE RELLENADO pERO ES EXPERIMENTAL, POCO A POCO
 	
-	System.out.println("quantizying...");
+	System.out.println("quantizying LHE2...");
 	/*
 	int iterations=1000;
 	long start_time = System.currentTimeMillis();
@@ -5117,6 +5131,8 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 	
 	boolean rectificando=false;
 	
+	
+	int[] steparray=new int [512*512];
 	
 	for (int y=0;y<img.height;y++)  {
 		for (int x=0;x<img.width;){
@@ -5202,7 +5218,7 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 			//tunning hop1 for the next hop
 			//-------------------------------
 			boolean small_hop=false;
-			
+			int hop1_prev=hop1;
 			if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
 			else small_hop=false;     
 
@@ -5220,10 +5236,45 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 			stepant=step;
 			step=(int)(0.5+max_hop1/hop1);
 			//System.out.println("step"+step);
-					
+			
+			/*
+			if (hop1==4) {int u=4;if (step>u) step =step -1; if (step<u) step=step+1;}
+			if (hop1==5) {int u=3;if (step>u) step =step -1; if (step<u) step=step+1;}
+			if (hop1==6) {int u=2;if (step>u) step =step -1; if (step<u) step=step+1;}
+			if (hop1>=7) {int u=1;if (step>u) step =step -1; if (step<u) step=step+1;}
+			*/
+			
+			
+			if (hop1==4) step =4;
+			if (hop1==5) step =3;
+			if (hop1==6) step =2;
+			if (hop1>=7) step =1;
+			
+			//steparray[pix]=step;
+			
+			if (pix> img.width ) if (step> steparray[pix-img.width] ){step=step-1;}else if (step<steparray[pix-img.width]) step=step+1;//steparray[pix]=step+1;}
+			//if ((x & 15) > ((x+step) & 15)) step=1;
+			//if (pix> img.width ) if (step >1+steparray[pix-img.width] ){step=step-2;}
+			
+			//if (pix> img.width ) if (step> steparray[pix-img.width] ){step=step-1;}
+			if ((x & 31) > ((x+step) & 31)) step=1;
+			steparray[pix]=step;
+			//if (pix> img.width && steparray[pix-img.width]==1 ){step=1;}
+			
+			//step=1;
+			
+			if ((x & 31) > ((x+step) & 31)) step=1;
+			//if ((x & 15) > ((x+step) & 15)) step=1;
+			
+			//if (x<290 && x+step>290) step=1;
+			
+			System.out.println("step:"+step+ "    x:"+x);		
 	
 			if (x+step> img.width-1) step= img.width -x-1;
-	
+			
+			
+			//if (step==0) {System.out.println ("ey");x=img.width+1;continue;}
+			
 			float alfa=0;
 					
 			
@@ -5236,6 +5287,9 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 				result_YUV[i2]=result_YUV[i2-1];
 				hops[i2]=0;//hops[i2-1];//habria que eliminarlo. no hay hops no los va a haber en estos pixels
 				
+				
+				//new
+				steparray[i2]=step;
 				}
 		
 		
@@ -5251,15 +5305,18 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 			 for (int i2=pixant+1; i2<pix;i2++)
 			
 				{
-				result_YUV[i2]=(int)(result_YUV[i2-1]+ alfa);
+				//si descomento, paso a bilineal
+				 result_YUV[i2]=(int)(result_YUV[i2-1]+ alfa);
 				}
 			
 			//
 				
 			}
 			
+			if (step==0) step=1;//solo ocurre al final de la scanline
 			
-			x+=step+1;
+			x+=step;//+1;
+			
 			totales++;
 			pixant=pix;
 			
@@ -5268,7 +5325,7 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 			//--------------------------
 			last_small_hop=small_hop;
 			//pix++;
-			pix+=step+1;
+			pix+=step;//+1;
 			
 		}//for x
 	}//for y
