@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import kanzi.test.MySSIM;
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
 
 public class FramePlayer {
 

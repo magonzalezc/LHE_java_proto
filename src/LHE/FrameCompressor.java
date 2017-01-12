@@ -4,7 +4,7 @@ import huffman.Huffman;
 import java.util.Calendar;
 import java.util.Date;
 
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
 
 /**
  * 
@@ -47,7 +47,7 @@ public void loadFrame( String path_img)
 	lhe.img=img;
 	img.BMPtoYUV(path_img);
 	
-	//si modifico aqui el tamaño puedo probar con diferentes tamaños de imagen para hacer down
+	//si modifico aqui el tamaï¿½o puedo probar con diferentes tamaï¿½os de imagen para hacer down
 	//y asi evaluar rendimientos
 	//img.width=256;
 	//img.height=256;
@@ -122,7 +122,9 @@ public float[] compressBasicFrame()
 	System.out.println(" result image is ./output_img/BasicLHE_YUV.bmp");
 	//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
 	
-	lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_withdelta(img.hops[0],img.LHE_YUV[0]);
+
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
 	//PRblock.img=img;
 	//grid.computeMetrics();//compute metrics of all Prblocks, equalize & quantize
@@ -205,7 +207,9 @@ public float[] compressFrame(float ql)
 		// IMPROVEMENT PENDING:
 		//coding by blocks instead globally, this part is paralellizable  N^2-->2N+1
 	//lhe.initGeomR();
-		lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+		//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+		lhe.quantizeOneHopPerPixel_R_withdelta(img.hops[0],img.LHE_YUV[0]);
+
 		// now, hops are stored at img.hops[color component][coordinate]
 		// they can be saved
 		

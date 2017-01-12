@@ -21,7 +21,7 @@ import LHE.FramePlayer;
 import LHE.VideoCompressor;
 
 //classes from package Qmetrics
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
 
 public class MainTest {
 	//static Scanner keyb = new Scanner (System.in);		
@@ -469,7 +469,7 @@ public class MainTest {
 		//ImgUtil img=new ImgUtil();
 		
 		//for each file
-		//primero pasamos el file a yuvbnç
+		//primero pasamos el file a yuvbnï¿½
 		String[] rows=new String[ficherosEnDirectorio.length];//resultado
 		String[] rowssim=new String[ficherosEnDirectorio.length];//resultado
 		for (int i=0;i<ficherosEnDirectorio.length;i++)
@@ -581,7 +581,7 @@ public class MainTest {
 			//ImgUtil img=new ImgUtil();
 			
 			//for each file
-			//primero pasamos el file a yuvbnç
+			//primero pasamos el file a yuvbnï¿½
 			String[] rows=new String[ficherosEnDirectorio.length];//resultado
 			String[] rowssim=new String[ficherosEnDirectorio.length];//resultado
 			
@@ -773,7 +773,7 @@ public class MainTest {
 			//ImgUtil img=new ImgUtil();
 			
 			//for each file
-			//primero pasamos el file a yuvbnç
+			//primero pasamos el file a yuvbnï¿½
 			//String[] rows=new String[ficherosEnDirectorio.length];//resultado
 			String[] rowssim=new String[ficherosEnDirectorio.length];//resultado
 			
