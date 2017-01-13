@@ -34,10 +34,12 @@ public boolean DEBUG=false;
 	public float sizev;
 
 	//max, min number of blocks in the larger side of the image
-	public final static int MAX_BLOCKS=32;//32;//32;//32;//32;//32;//1;//32;//1;//32;//32;//32;//32;//32;//64;//32;//32;//32;//32;//16;//
+	public final static int MAX_BLOCKS=32;////32;//32;//32;//32;//32;//1;//32;//1;//32;//32;//32;//32;//32;//64;//32;//32;//32;//32;//16;//
 	//public final static int MIN_BLOCKS=32;
 	public final static int MIN_LEN_BLOCK=4;//16;//16;//16;//16;//16; hace que haya menos de 32 bloques si width<512
 
+	
+	
 
 	/**
 	 * constructor
@@ -452,7 +454,8 @@ public void savePRtxtJavalanguage(String path_file)
 			for (int x=0;x<number_of_blocks_H+1;x++)
 			{
 				prbl[y][x].computePRmetrics();
-				
+				//prbl[y][x].computePRmetrics4SPS(2,2);
+				//prbl[y][x].computePRmetrics4SPS(3,3);
 				//prbl[y][x].computePRmetrics4SPS(4,4);
 				//prbl[y][x].computePRmetricsSPS();
 				//prbl[y][x].computePRmetrics_experimental();

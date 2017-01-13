@@ -3,3 +3,4 @@
 *.project
 output_debug/
 output_img/
+*.orig
