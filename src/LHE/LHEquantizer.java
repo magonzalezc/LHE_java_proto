@@ -4369,9 +4369,9 @@ public void quantizeOneHopPerPixel_withdelta(int[] hops,int[] result_YUV)
 {
 	
 	
-	int max_hop1=10; //hop1 interval 4..10
+	int max_hop1=4;//10; //hop1 interval 4..10
 	int min_hop1=4;// minimum value of hop1 is 4 
-	int start_hop1=(max_hop1 + min_hop1)/2;
+	int start_hop1=4;//(max_hop1 + min_hop1)/2;
 	
 	int delta[]=new int[img.width*img.height];
 	int delta_prediction[]=new int[img.width*img.height];

@@ -1,5 +1,6 @@
 import LHE.*;
-import Qmetrics.*;
+import qmetrics.*;
+
 import java.util.Date;
 
 

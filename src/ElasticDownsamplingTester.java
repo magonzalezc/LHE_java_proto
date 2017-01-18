@@ -7,7 +7,8 @@ import LHE.ImgUtil;
 import LHE.LHEquantizer;
 import LHE.PRblock;
 import LHE.VideoCompressor;
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
+import qmetrics.qmetrics;
 
 
 public class ElasticDownsamplingTester {
@@ -244,7 +245,7 @@ public class ElasticDownsamplingTester {
 		ImgUtil img=new ImgUtil();
 		
 		//for each file
-		//primero pasamos el file a yuvbnç
+		//primero pasamos el file a yuvbnï¿½
 		String[] rows=new String[ficherosEnDirectorio.length];
 		for (int i=0;i<ficherosEnDirectorio.length;i++)
 		{
@@ -803,7 +804,7 @@ public class ElasticDownsamplingTester {
 
 		ImgUtil img=new ImgUtil();
 		//for each file
-		//primero pasamos el file a yuvbnç
+		//primero pasamos el file a yuvbnï¿½
 
 		String[] rows=new String[ficherosEnDirectorio.length];
 		for (int j=0;j<101;j++)
@@ -1116,7 +1117,7 @@ public class ElasticDownsamplingTester {
 				
                 //Block bi=img.grid.bl[y][x];
 				
-				Qmetrics.PSNRutil my_psnr=new Qmetrics.PSNRutil() ;
+				qmetrics.PSNRutil my_psnr=new qmetrics.PSNRutil() ;
 				/*
 				float mse=my_psnr.getMSE(img.downsampled_LHE_YUV[0],img.downsampled_YUV[0],bi.xini,bi.downsampled_xfin,bi.yini,bi.downsampled_yfin,img.width);
 			//	System.out.println(" block:"+y+","+x+":"+mse);
@@ -1207,7 +1208,7 @@ System.out.print(".");
 		
 		//ahora ya tenemos a downsampled LHE. procedemos calcular el PSNR de cada bloque escalado
 		//---------------------------------------------------------------------------------------
-		Qmetrics.PSNRutil my_psnr=new Qmetrics.PSNRutil() ;
+		qmetrics.PSNRutil my_psnr=new qmetrics.PSNRutil() ;
 		for ( int y=0 ; y<img.grid.number_of_blocks_V;y++)
 		{
 			for ( int x=0 ; x<img.grid.number_of_blocks_H;x++)
@@ -1341,7 +1342,7 @@ System.out.print(".");
 	 //info malla
 	 
 	 //decodifica hops
-	 //interpreta malla y asi sabe el tamaño de cada bloque down
+	 //interpreta malla y asi sabe el tamaï¿½o de cada bloque down
 	 //interpreta hops bloque a bloque, haciendo boundaries para interpretar los siguientes bloques
 	 //una vez que tenemos imagen down, interpola
 	 

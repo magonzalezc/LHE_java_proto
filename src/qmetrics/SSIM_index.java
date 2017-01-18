@@ -1,3 +1,4 @@
+package qmetrics;
 
 import ij.*;
 import ij.plugin.*;
@@ -18,8 +19,8 @@ import java.awt.font.*;
 
 	Main reference:
 	Zhou Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, 
-	“Image quality assessment: From error visibility to structural similarity”, 
-	IEEE Trans. Image Processing, vol. 13, pp. 600–612, Apr. 2004.
+	ï¿½Image quality assessment: From error visibility to structural similarityï¿½, 
+	IEEE Trans. Image Processing, vol. 13, pp. 600ï¿½612, Apr. 2004.
 
 	ImageJ by W. Rasband, U. S. National Institutes of Health, Bethesda, Maryland, USA, 
 	http://rsb.info.nih.gov/ij/.  1997-2007. November 27th  2008.
@@ -43,7 +44,7 @@ THIS IS AN AN IMPLEMENTATION AS A PLUGIN FOR IMAGEJ DEVELOPED IN JAVA. IT CALCUL
 IN MATLAB. IT WORKS WITH 8, 16 AND 32 BITS GRAY LEVELS. 
 THE DIFERENCE BETWEEN THIS VERSION ANS V_1 IS THE SIMULATION OF VIEWING DISTANCE. ACCORDING TO ZHOU WANG'S HOME PAGE, literal citation:
 
-" The precisely “right” scale depends on both the image resolution and the viewing distance and is usually difficult to be obtained.  In practice, we suggest to use the following empirical formula 
+" The precisely ï¿½rightï¿½ scale depends on both the image resolution and the viewing distance and is usually difficult to be obtained.  In practice, we suggest to use the following empirical formula 
 to determine the scale for images viewed from a typical distance (say 3~5 times of the image height): 1) Let F = max(1, round(N/256)), where N is the number of pixels in image height; 
 2) Average local F by F pixels and then downsample the image by a factor of F; and 3) apply the ssim_index.m program. For example, for an 512 by 512 image, F = max(1, round(512/256)) = 2, 
 so the image should be average within a 2 by 2 window and downsampled by a factor of 2 before applying ssim_index.m "
@@ -214,7 +215,7 @@ public void run (String arg) {
 		ColorModel cm=null;
 		ImageProcessor gauss_window_ip = new FloatProcessor (filter_width, filter_width, window_weights, cm);
 		gauss_window_ip = gauss_window_ip.resize (filter_width*filter_scale);
-		String title_filtro_1 = "Sigma: " + sigma_gauss + " Width: "+ filter_width + " píxeles"; 	
+		String title_filtro_1 = "Sigma: " + sigma_gauss + " Width: "+ filter_width + " pï¿½xeles"; 	
 		ImagePlus gauss_window_imp = new ImagePlus (title_filtro_1, gauss_window_ip);
 		gauss_window_imp.show();
 		gauss_window_imp.updateAndDraw(); 		

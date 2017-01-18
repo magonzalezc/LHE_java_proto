@@ -76,6 +76,9 @@ public class ImgUtil {
 	//interpolated image components
 	public int [][] intermediate_interpolated_YUV; //vertical interpolation
 	public int [][] interpolated_YUV;//v+h interpolation
+	
+	//filtered image
+	public int [][] filtered_YUV;
 
 	//mask before inter-block interpolation
 	//public int [] mask;
@@ -160,7 +163,8 @@ height=orig.height;
 	//for decoder:
 	intermediate_interpolated_YUV=new int[3][width*height];
 	interpolated_YUV=new int[3][width*height];
-
+	filtered_YUV = new int [3][width*height];
+	
 	//mask=new int[width*height];
 	countdown=new int[width*height];
 	
@@ -347,6 +351,7 @@ height=orig.height;
 		//for decoder:
 		intermediate_interpolated_YUV=new int[3][width*height];
 		interpolated_YUV=new int[3][width*height];
+		filtered_YUV = new int [3][width*height];
 
 		//mask=new int[width*height];
 		countdown=new int[width*height];
@@ -3051,7 +3056,7 @@ public void computeY2fromDeltaY1pY1ppV2(int[][] delta_interpol,int[][] y1PP, int
 				{
 					y2=y1p;//+dy6;//no hay cambio  Y1pp tiene  baja resolucion muy probable
 				}
-				//si la diferencia de resolucion es pequeña (y1p==y1pp) usaremos y1pp+dy6
+				//si la diferencia de resolucion es pequeï¿½a (y1p==y1pp) usaremos y1pp+dy6
 				//pero si es grande tendremos que usar otra cosa
 				else if (l<=u2) //leve cambio, quizas aumento de brillo
 					{
@@ -3311,7 +3316,7 @@ public void computeY2fromDeltaY1pY1ppV3(int[][] delta_interpol,int[][] y1PP)//, 
 					
 						if (l<=ul2)
 					{
-						//hay un cambio pequeño. puede ser :
+						//hay un cambio pequeï¿½o. puede ser :
 						//  aumento de brillo en zona detallada 
 						//  cambio de tono suave en zona suave
 						//  movimiento leve
@@ -3378,7 +3383,7 @@ public void compute_dy(int[][] frame,  int[][] frame_y1, int[] countdown)
 			    
 				//valores de min_count
 				// -1: genera estelas. un solo salto no es suficiente para restaurar el color de fondo
-				// -2. aceptable, aunque se ve leve estela. quizas con vectores de mov sería ideal
+				// -2. aceptable, aunque se ve leve estela. quizas con vectores de mov serï¿½a ideal
 				// -3: es mejor que -2 (estela no aparece) pero puede ocurrir que el tercer salto sea destructivo 
 				//     debido al fuerte down. Solo es destructivo en zonas detalladas. en fondo liso es mejor
 				// -4 : no es mejor que -3 y es algo mas destructivo

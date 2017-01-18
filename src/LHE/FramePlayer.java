@@ -1,5 +1,6 @@
 package LHE;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -308,8 +309,9 @@ public class FramePlayer {
 			
 			
 			//filterEPX4x(16);
-			filterEPX2x(11,16);
-			
+			//filterEPX2x(11,16);
+			filterEPX_marina();
+			//filterMedian();
 			
 			//iterando queda bien para .1bpp
 			//for (int it=1;it<5;it++)
@@ -318,12 +320,14 @@ public class FramePlayer {
 			//filterEPX4x();
 		}
 		
+		
 		//---------------------------------------------------
 		//saving file
 		if (!MODE.equals("HOMO"))
 			img.YUVtoBMP(output_directory+"/play.bmp",img.interpolated_YUV[0]);
 		else
 			img.YUVtoBMP(output_directory+"/play_homo.bmp",img.interpolated_YUV[0]);
+		
 		//img.interpolatedYUVtoBMP("./img/interpolated_lena.bmp");
 
 		float percent=grid.getNumberOfDownsampledPixels();
@@ -359,7 +363,6 @@ public class FramePlayer {
 		*/
 		
 		
-		
 		return result;
 
 		
@@ -389,7 +392,7 @@ public class FramePlayer {
 		
 		//ahora ya tenemos a downsampled LHE. procedemos calcular el PSNR de cada bloque escalado
 		//---------------------------------------------------------------------------------------
-		Qmetrics.PSNRutil my_psnr=new Qmetrics.PSNRutil() ;
+		qmetrics.PSNRutil my_psnr=new qmetrics.PSNRutil() ;
 		for ( int y=0 ; y<grid.number_of_blocks_V;y++)
 		{
 			for ( int x=0 ; x<grid.number_of_blocks_H;x++)
@@ -904,6 +907,341 @@ public class FramePlayer {
 		
 	}
 //*************************************************************************************
+public void filterScale3x () {
+	int pix;
+	int component = 0;
+
+	
+	//First, copy the image
+	for (int y=0; y<img.height; y++) {
+		for (int x=0; x<img.width; x++) {
+			pix = y*img.width + x;
+			
+			img.filtered_YUV[component][pix] = img.interpolated_YUV[component][pix];
+		}
+	}
+	
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	int u1 = 11;
+	//Second, filter the image
+	for (int y=1; y<img.height - 1; y++) {
+		for (int x=1; x<img.width - 1; x++) {
+			pix = y*img.width + x;
+
+			A = img.interpolated_YUV[component][pix - img.width - 1];
+			B = img.interpolated_YUV[component][pix - img.width];
+			C = img.interpolated_YUV[component][pix - img.width + 1];
+			D = img.interpolated_YUV[component][pix - 1];
+			E = img.interpolated_YUV[component][pix];
+			F = img.interpolated_YUV[component][pix + 1];
+			G = img.interpolated_YUV[component][pix + img.width - 1];
+			H = img.interpolated_YUV[component][pix + img.width];
+			I = img.interpolated_YUV[component][pix + img.width + 1];
+			
+			/*
+			img.filtered_YUV[component][pix - img.width - 1] = E;
+			img.filtered_YUV[component][pix - img.width] = E;
+			img.filtered_YUV[component][pix - img.width + 1] = E;
+			img.filtered_YUV[component][pix - 1] = E;
+			img.filtered_YUV[component][pix] = E;
+			img.filtered_YUV[component][pix + 1] = E;
+			img.filtered_YUV[component][pix + img.width - 1] = E;
+			img.filtered_YUV[component][pix + img.width] = E;
+			img.filtered_YUV[component][pix + img.width + 1] = E;
+			*/
+			
+			
+			if (D==B && D!=H && B!=F) {
+				img.filtered_YUV[component][pix - img.width - 1] = D;
+			}
+			
+			if ((D==B && D!=H && B!=F && E!=C) || (B==F && B!=D && F!=H && E!=A)) {
+				img.filtered_YUV[component][pix - img.width] = B;
+			}
+			
+			if (B==F && B!=D && F!=H) {
+				img.filtered_YUV[component][pix - img.width + 1] = F;
+			}
+			
+			if ((H==D && H!=F && D!=B && E!=A) || (D==B && D!=H && B!=F && E!=G)) {
+				img.filtered_YUV[component][pix - 1] = D;
+			}
+			
+			if ((B==F && B!=D && F!=H && E!=I) || (F==H && F!=B && H!=D && E!=C)) {
+				img.filtered_YUV[component][pix + 1] = F;
+			}
+			
+			if (H==D && H!=F && D!=B) {
+				img.filtered_YUV[component][pix + img.width - 1] = D;
+			}
+			
+			if ((F==H && F!=B && H!=D && E!=G) || (H==D && H!=F && D!=B && E!=I)) {
+				img.filtered_YUV[component][pix + img.width] = H;
+			}
+			
+			if (F==H && F!= B && H!=D) {
+				img.filtered_YUV[component][pix + img.width + 1] = F;
+			}
+			
+			
+			
+			/*
+			if (Math.abs(D-B) < u1 && D!=H && B!=F) {
+				img.filtered_YUV[component][pix - img.width - 1] = (D+B)/2;
+			}
+			
+			if (Math.abs(D-B) < u1 && D!=H && B!=F && E!=C) { 
+				img.filtered_YUV[component][pix - img.width] = (D+B)/2;
+			}
+			
+			if ((Math.abs(B-F) < u1 && B!=D && F!=H && E!=A)) {
+				img.filtered_YUV[component][pix - img.width] = (F+B)/2;
+			}
+			
+			if (Math.abs(B-F) < u1 && B!=D && F!=H) {
+				img.filtered_YUV[component][pix - img.width + 1] = (F+B)/2;
+			}
+			
+			if (Math.abs(H-D) < u1 && H!=F && D!=B && E!=A) {
+				img.filtered_YUV[component][pix - img.width + 1] = (H+D)/2;
+			}
+					
+			if (Math.abs(D-B) < u1 && D!=H && B!=F && E!=G) {
+				img.filtered_YUV[component][pix - 1] = (D+B)/2;
+			}
+			
+			if (Math.abs(B-F) < u1 && B!=D && F!=H && E!=I) {
+				img.filtered_YUV[component][pix + 1] = (B+F)/2;
+			}
+			
+			if (Math.abs(F-H) < u1 && F!=B && H!=D && E!=C) {
+				img.filtered_YUV[component][pix + 1] = (F+H)/2;
+			}
+			
+			if (Math.abs(H-D) < u1 && H!=F && D!=B) {
+				img.filtered_YUV[component][pix + img.width - 1] = (D+H)/2;
+			}
+			
+			if (Math.abs(F-H) < u1 && F!=B && H!=D && E!=G) {
+				img.filtered_YUV[component][pix + img.width] = (F+H)/2;
+			}
+			
+			if (Math.abs(H-D) < u1 && H!=F && D!=B && E!=I) {
+				img.filtered_YUV[component][pix + img.width] = (H+D)/2;
+			}
+			
+			if (Math.abs(F-H) < u1 && F!= B && H!=D) {
+				img.filtered_YUV[component][pix + img.width + 1] = (F+H)/2;
+			}	
+			*/
+		}
+	}
+}
+//*************************************************************************************
+public void filterMedian () {
+	int pix;
+	int[] im= new int [img.width*img.height];
+
+	int box [] = new int [9];
+	
+	//First, copy the image
+	for (int y=1; y<img.height; y++) {
+		for (int x=1; x<img.width; x++) {
+			pix = y*img.width + x;
+			
+			im[pix] = img.interpolated_YUV[0][pix];
+		}
+	}
+	
+	//Second, filter the image
+	for (int y=0; y<img.height - 2; y++) {
+		for (int x=0; x<img.width - 2; x++) {
+			pix = y*img.width + x;
+
+			box[0] = im[pix];
+			box[1] = im[pix +1];
+			box[2] = im[pix +2];
+			box[3] = im[pix + img.width];
+			box[4] = im[pix + img.width + 1];
+			box[5] = im[pix + img.width + 2];
+			box[6] = im[pix + 2*img.width];
+			box[7] = im[pix + 2*img.width + 1];
+			box[8] = im[pix + 2*img.width + 2];
+
+			Arrays.sort(box);
+
+			img.interpolated_YUV[0][pix] = (box[0] + box[1] + box[2] + box[3] + box[4] + box[5]+ box[6]+ box[7] +box[8])/9 ;
+		}
+	}	
+}
+//*************************************************************************************
+
+public void filterEPX_marina() {
+	int um1 = 11;
+	int um2 = 16;
+	int umbral=11;
+
+	int mezcla;
+	int[] matriz=new int[9];
+	
+	int i;
+	int[] im=img.interpolated_YUV[0];
+
+
+	for (int y=1; y<img.height-1;y++)
+	{
+		for (int x=1; x<img.width-1;x++)
+		{
+				
+			boolean modif=false;
+			
+			int u1=um1;//11;
+			int u2=um2;//16;
+			
+			i=y*img.width+x;		
+			matriz[0]=im[i-1-img.width];
+			matriz[1]=im[i-img.width];
+			matriz[2]=im[i+1-img.width];
+			matriz[3]=im[i-1];
+			matriz[4]=im[i];
+			matriz[5]=im[i+1];
+			matriz[6]=im[i-1+img.width];
+			matriz[7]=im[i+img.width];
+			matriz[8]=im[i+1+img.width];
+			
+			//marco arriba izquierdo 
+			if ((Math.abs(matriz[1]-matriz[2])<u1) &&
+			    (Math.abs(matriz[3]-matriz[6])<u1) &&
+			    (Math.abs(matriz[1]-matriz[3])<u2)) 
+			{
+				
+				mezcla=(matriz[1]+matriz[3])/2;
+				
+				im[i]=mezcla;
+				modif=true;
+			}
+			//marco arriba derecho
+			  
+			if ((Math.abs(matriz[0]-matriz[1])<u1) &&
+					(Math.abs(matriz[5]-matriz[8])<u1) &&
+				    (Math.abs(matriz[5]-matriz[1])<u2)) 
+			{
+				mezcla=(matriz[1]+matriz[5])/2;
+				im[i]=mezcla;
+				modif=true;
+			 }
+			
+			//marco abajo izq
+			if ((Math.abs(matriz[7]-matriz[8])<u1) &&
+					(Math.abs(matriz[0]-matriz[3])<u1) &&
+					(Math.abs(matriz[3]-matriz[7])<u2)) 
+			{
+				
+				mezcla=(matriz[3]+matriz[7])/2;
+				im[i]=mezcla;
+				modif=true;
+			}
+				
+			//marco abajo dere
+			if ((Math.abs(matriz[6]-matriz[7])<u1) &&
+			    (Math.abs(matriz[2]-matriz[5])<u1) &&
+				(Math.abs(matriz[7]-matriz[5])<u2)) 
+			{
+				mezcla=(matriz[7]+matriz[5])/2;
+				im[i]=mezcla;
+				modif=true;
+			}
+				
+
+			if (!modif)
+			{
+					//marco arriba izquierdo 
+				if (((Math.abs(matriz[1]-matriz[2])<u1) &&
+					    (Math.abs(matriz[1]-matriz[3])<u2))) 
+			    {
+					mezcla=(matriz[1]+matriz[3]+matriz[4])/3;
+					mezcla=(matriz[4]+matriz[1])/2;
+					im[i]=mezcla;
+					modif=true;
+			    }
+				
+				if ((Math.abs(matriz[3]-matriz[6])<u1) &&
+				     (Math.abs(matriz[1]-matriz[3])<u2))
+				{
+					mezcla=(matriz[1]+matriz[3]+matriz[4])/3;
+					mezcla=(matriz[3]+matriz[4])/2;
+					im[i]=mezcla;
+					modif=true;
+				}
+					
+				//marco arriba derecho
+				if ((Math.abs(matriz[0]-matriz[1])<u1) &&
+						(Math.abs(matriz[5]-matriz[1])<u2)) 
+				{
+					  
+					mezcla=(matriz[1]+matriz[5]+matriz[4])/3;
+					mezcla=(matriz[1]+matriz[4])/2;
+					im[i]=mezcla;
+					modif=true;
+				}
+				
+				if ((Math.abs(matriz[5]-matriz[8])<u1) &&
+						  (Math.abs(matriz[5]-matriz[1])<u2))
+				{
+					  mezcla=(matriz[1]+matriz[5]+matriz[4])/3;
+					  mezcla=(matriz[5]+matriz[4])/2;
+					  im[i]=mezcla;
+					  modif=true;
+				}
+				
+				
+				//marco abajo izq
+				if ((Math.abs(matriz[7]-matriz[8])<u1) &&
+						(Math.abs(matriz[3]-matriz[7])<umbral))
+				{
+					mezcla=(matriz[3]+matriz[7]+matriz[4])/3;
+					mezcla=(matriz[7]+matriz[4])/2;
+					im[i]=mezcla;
+					modif=true;
+						
+				}
+							    
+				if ((Math.abs(matriz[0]-matriz[3])<u2) &&
+						(Math.abs(matriz[3]-matriz[7])<umbral))
+				{
+					mezcla=(matriz[3]+matriz[7]+matriz[4])/3;
+					mezcla=(matriz[3]+matriz[4])/2;
+					im[i]=mezcla;
+					modif=true;
+				}
+				
+				//marco abajo dere
+				if ((Math.abs(matriz[6]-matriz[7])<u1) &&
+						(Math.abs(matriz[7]-matriz[5])<u2))
+				{
+					mezcla=(matriz[7]+matriz[5]+matriz[4])/3;
+					mezcla=(matriz[7]+matriz[4])/2;
+					im[i]=mezcla;
+					modif=true;
+				}
+									    
+				if ((Math.abs(matriz[2]-matriz[5])<u1) &&
+					(Math.abs(matriz[7]-matriz[5])<u2))
+				{
+					mezcla=(matriz[7]+matriz[5]+matriz[4])/3;
+					mezcla=(matriz[5]+matriz[4])/2;
+					im[i]=mezcla;
+					modif=true;
+				}												
+			}
+		}		
+	}
+}
+
+//*************************************************************************************
+
 public void filterEPX2x(int u1,int u2)
 {
 //esta funcion filtra por EPX la imagen 
@@ -920,6 +1258,7 @@ public void filterEPX2x(int u1,int u2)
 	}
 	System.out.println("filtered !");
 }
+
 public void filterEPX4x(int u)
 {
 //esta funcion filtra por EPX la imagen 

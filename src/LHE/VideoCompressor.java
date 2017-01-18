@@ -2,11 +2,12 @@ package LHE;
 
 import java.io.File;
 import java.util.Scanner;
+
+import qmetrics.*;
+
 import java.io.*;
 import java.util.Comparator;
 import java.util.Arrays;
-
-import Qmetrics.*;
 /**
  * Class VideoProcessing
  * @author josejavg
@@ -2135,7 +2136,7 @@ public void compressVideoNONtrail_V2(float cfini)
 				
 				fp.img.YUVtoBMP(output_directory+"/"+frames[i],fp.img.YUV[0]);
 				
-				Qmetrics.PSNRutil my_psnr=new Qmetrics.PSNRutil() ;
+				qmetrics.PSNRutil my_psnr=new qmetrics.PSNRutil() ;
 				LHE.FrameCompressor fc_psnr=new LHE.FrameCompressor(1);
 				fc_psnr.loadFrame(directorio+"/"+frames[i]); // Esto es Y2
 				float mse=(float)my_psnr.getMSE(fp.img.YUV[0],fc_psnr.img.YUV[0],0,fp.img.width-1,0,fp.img.height-1,fp.img.width);
@@ -2285,7 +2286,7 @@ public void compressVideoTesis001(float ql, String interpol_type)
 				//----------------------------------------------------------------
 				//System.out.println("pre-compressing...");
 				//los valores historicos de PR se van almacenando en grid_ant
-				//uso todo el rato el mismo objeto grid, no almacena datos de PR anteriores ¿porque? no me acuerdo!!
+				//uso todo el rato el mismo objeto grid, no almacena datos de PR anteriores ï¿½porque? no me acuerdo!!
 				fc2.grid=grid_ant;//con esto ya garantizo que todo se guarde en el mismo objeto grid y por tanto en los mismos Prbl que tienen la historia
 				//fc2.preCompressFrame(ql,grid_ant);//calcula metrics y ppp
 				//fc2.preCompressFrame(ql,null);//calcula metrics y ppp

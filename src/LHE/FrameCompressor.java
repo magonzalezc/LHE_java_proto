@@ -122,8 +122,8 @@ public float[] compressBasicFrame()
 	System.out.println(" result image is ./output_img/BasicLHE_YUV.bmp");
 	//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
 	
-	//lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
-	lhe.quantizeOneHopPerPixel_withdelta(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_withdelta(img.hops[0],img.LHE_YUV[0]);
 
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
 	//PRblock.img=img;
@@ -207,8 +207,8 @@ public float[] compressFrame(float ql)
 		// IMPROVEMENT PENDING:
 		//coding by blocks instead globally, this part is paralellizable  N^2-->2N+1
 	//lhe.initGeomR();
-		//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
-		lhe.quantizeOneHopPerPixel_R_withdelta(img.hops[0],img.LHE_YUV[0]);
+		lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+		//lhe.quantizeOneHopPerPixel_R_withdelta(img.hops[0],img.LHE_YUV[0]);
 
 		// now, hops are stored at img.hops[color component][coordinate]
 		// they can be saved

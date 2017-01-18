@@ -132,7 +132,7 @@ public class MainTest {
 		
 		String option =  readKeyboard();
 		if (option.equals("")) option="1";
-		fc.compressBasicFrame(option,filename);
+		fc.compressBasicFrame(filename);
 		
 		float ssim=MySSIM.getSSIM("./output_debug/orig_YUV_BN.bmp", "./output_img/BasicLHE_YUV.bmp");
 		System.out.println ("SSIM:"+ssim);
@@ -235,7 +235,7 @@ public class MainTest {
 		FrameCompressor fc=new LHE.FrameCompressor(1);
 		fc.DEBUG=debug;
 		
-		fc.downmode=downmode;
+		fc.MODE=downmode;
 		
 		
 		if (ED==false)fc.MODE=new String("HOMO");

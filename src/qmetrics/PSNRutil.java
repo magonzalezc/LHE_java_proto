@@ -1,9 +1,9 @@
-package Qmetrics;
+package qmetrics;
 
 public class PSNRutil {
 
 	/**
-	 * esta funcion va a calcular el MSE ( error cuadratico medio) de dos señales, en los limites 
+	 * esta funcion va a calcular el MSE ( error cuadratico medio) de dos seï¿½ales, en los limites 
 	 * que digamos
 	 * @param src
 	 * @return
