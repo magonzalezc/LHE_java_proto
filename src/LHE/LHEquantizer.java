@@ -5758,8 +5758,8 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 			
 			
 			  stepant=step;			  
-			  if (hop1==4) step =6;
-			  else if (hop1==5) step =4;
+			  if (hop1==4) step =4;
+			  else if (hop1==5) step =3;
 			  else if (hop1==6) step =2;
 			  else if (hop1>=7) step =1;
 			  
