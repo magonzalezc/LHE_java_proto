@@ -1,5 +1,7 @@
 package LHE;
 
+import java.util.Arrays;
+
 /*
  * 
  * hops are stored in:
@@ -1087,1007 +1089,1396 @@ System.exit(0);
 			System.exit(0);
 			*/
 				}
-				//**************************************************************************************************
-				/**
-				 * 
-				 * 	 downsampled image luminance array is the input for this function. 
-				 *   This downsampled luminance array is suposed to be stored at img.downsampled_YUV[0][pix]; 
-				 *   downsampled Image luminance array is not modified
-				 * 
-				 *   ahother input for this function is img.boundaries_YUV[0][pix];
-				 * 
-				 * 
-				 * @param b
-				 * @param hops        : OUTPUT
-				 * @param result_YUV   : OUTPUT
-				 * 
-				 */
-				public void quantizeDownsampledBlock_R_NORMAL(Block b, int[] hops,int[] result_YUV, int[] src_YUV, int[] boundaries_YUV)
+	//**************************************************************************************************
+	/**
+	 * 
+	 * 	 downsampled image luminance array is the input for this function. 
+	 *   This downsampled luminance array is suposed to be stored at img.downsampled_YUV[0][pix]; 
+	 *   downsampled Image luminance array is not modified
+	 * 
+	 *   ahother input for this function is img.boundaries_YUV[0][pix];
+	 * 
+	 * 
+	 * @param b
+	 * @param hops        : OUTPUT
+	 * @param result_YUV   : OUTPUT
+	 * 
+	 */
+	public void quantizeDownsampledBlock_R_NORMAL(Block b, int[] hops,int[] result_YUV, int[] src_YUV, int[] boundaries_YUV)
+	{
+	
+		
+		
+		//block b contains the coordinates to set the limits of this function
+		
+		
+		//some parts of this code are identical to the function quantizeOneHopPerPixel() 
+		
+		
+		int max_hop1=8;// hop1 interval 4..8
+		int min_hop1=4;// 
+		int hop1=max_hop1;
+		int hop0=0; // predicted signal
+		int emin;//error of predicted signal
+		int hop_number=4;//selected hop // 4 is NULL HOP
+		int oc=0;// original color
+		
+		
+		int rmax=20;
+		if (b.PRavg==1.0) rmax=30;//bordes abruptos, iconos, ruido 
+		//else if (b.PRavg>=0.625) rmax=25;//bordes 1,1,1,0.5
+		else if (b.PRavg>=0.75) rmax=25;//bordes 1,1,1,0.5
+		//else if (b.PRavg>=0.625) rmax=20;//bordes 1,1,1,0.5
+		//rmax=20;
+		
+		
+		int pix=b.yini*img.width+b.xini;//initial pixel possition        
+		
+		boolean last_small_hop=false;// indicates if last hop is small
+		for (int y=b.yini;y<=b.downsampled_yfin;y++)  {
+			
+			//ponemos a hop minimo al comienzo de scan line de bloque
+			//esto es bueno sobre todo en bloques lisos
+			//hop1=min_hop1;//NUEVO 10/09/2014
+			
+			for (int x=b.xini;x<=b.downsampled_xfin;x++)  {
+	
+				pix=y*img.width+x;
+				oc=src_YUV[pix];
+	
+				//prediction of signal (hop0) , based on pixel's coordinates 
+				//----------------------------------------------------------
+				
+				//inner pixels ( mostly of them. that is the reason for considering the 1st option)
+				//---------------------------------------------------------------------------------
+				 if ((y>b.yini) &&(x>b.xini) && x!=b.downsampled_xfin){
+					hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+	
+					//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
+				}
+				//initial pix
+				//-----------
+				if (x==0 && y==0) {  
+					hop0=oc;//first pixel always is perfectly predicted! :-)  
+				}	
+				//upper side of the image
+			    //-----------------------
+				else if (y==0 && x>b.xini) {
+					hop0=result_YUV[x-1];
+				}
+				else if (y==0 && x==b.xini) {
+					hop0=boundaries_YUV[x-1];
+				}
+				
+				//left side of the image
+				//------------------------
+				else if ((x==0) && (y>b.yini)){
+					
+					hop0=result_YUV[pix-img.width];
+					//hop0=img.boundaries_YUV[0][pix-img.width];
+					last_small_hop=false;
+					
+					//comento esto 12/09/2014
+					hop1=max_hop1;
+				}
+	            else if ((x==0) && (y==b.yini)){
+					
+					//hop0=result_YUV[pix-img.width];
+					hop0=img.boundaries_YUV[0][pix-img.width];
+					last_small_hop=false;
+					
+					//comento esto 12/09/2014
+					hop1=max_hop1;
+					
+				}
+				//left side of the block
+				//------------------------
+				else if ((x==b.xini) && (y>b.yini)){
+					//System.out.print("zulu");
+						hop0=(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7;
+						//hop0=img.boundaries_YUV[0][pix-1];
+						//hop0=(4*img.boundaries_YUV[0][pix-1]+4*result_YUV[pix+1-img.width])/8;
+						//hop0=result_YUV[pix+1-img.width];//oc;//img.boundaries_YUV[0][pix-1];
+						//System.out.println(" el boundary v tiene color:"+img.boundaries_YUV[0][pix-1]+"  at  x:"+(x-1)+" ,y:"+y);
+						//hop0=oc;
+				}
+				//up-left corner of block
+				//--------------
+				else if ((x==b.xini) && (y==b.yini)){
+					//System.out.print("zulu");
+					hop0=(4*img.boundaries_YUV[0][pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;	
+				}
+				
+				
+				
+				//right side of block (and right side of image. is the same case)
+				//-----------------------------------------------------------------
+				else if ((x==b.downsampled_xfin) && (y>b.yini)) {
+					hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;	
+					
+					
+					//hop0=(4*result_YUV[pix-1]+0*result_YUV[pix-img.width])/4;
+				}
+				
+					
+				//upper side of block
+				//---------------------
+			    else if (y==b.yini && x>0 && x!=b.downsampled_xfin) {
+			    	hop0=(4*result_YUV[pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;	
+			    	//hop0=oc;//(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix+1-img.width])/6;
+			    	//hop0=(4*result_YUV[pix-1]+1*img.boundaries_YUV[0][pix+1-img.width])/5;
+			    	//hop0=result_YUV[pix-1];
+			    	
+			    	//hop0=oc;
+			    }
+			    else if ((x==b.downsampled_xfin) && (y==b.yini)) {
+					//hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;
+					hop0=(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix-img.width])/6;
+					//if (result_YUV[pix-img.width]==0) System.out.println(" ey");
+				}
+			    	
+				//hop0=oc;
+				
+				
+				//hops computation. initial values for errors
+				emin=256;//current minimum prediction error 
+				int e2=0;//computed error for each hop 
+	
+				//hop0 is prediction
+				//if (hop0>255)hop0=255;
+				//else if (hop0<0) hop0=0; 
+	
+	
+				// el array PCC habria que escogerlo en funcion de kini
+				
+				
+				//positive hops computation
+				//-------------------------
+				if (oc-hop0>=0) 
 				{
-
-					
-					
-					//block b contains the coordinates to set the limits of this function
-					
-					
-					//some parts of this code are identical to the function quantizeOneHopPerPixel() 
-					
-					
-					int max_hop1=8;// hop1 interval 4..8
-					int min_hop1=4;// 
-					int hop1=max_hop1;
-					int hop0=0; // predicted signal
-					int emin;//error of predicted signal
-					int hop_number=4;//selected hop // 4 is NULL HOP
-					int oc=0;// original color
-					
-					
-					int rmax=20;
-					if (b.PRavg==1.0) rmax=30;//bordes abruptos, iconos, ruido 
-					//else if (b.PRavg>=0.625) rmax=25;//bordes 1,1,1,0.5
-					else if (b.PRavg>=0.75) rmax=25;//bordes 1,1,1,0.5
-					//else if (b.PRavg>=0.625) rmax=20;//bordes 1,1,1,0.5
-					//rmax=20;
-					
-					
-					int pix=b.yini*img.width+b.xini;//initial pixel possition        
-					
-					boolean last_small_hop=false;// indicates if last hop is small
-					for (int y=b.yini;y<=b.downsampled_yfin;y++)  {
-						
-						//ponemos a hop minimo al comienzo de scan line de bloque
-						//esto es bueno sobre todo en bloques lisos
-						//hop1=min_hop1;//NUEVO 10/09/2014
-						
-						for (int x=b.xini;x<=b.downsampled_xfin;x++)  {
-
-							pix=y*img.width+x;
-							oc=src_YUV[pix];
-
-							//prediction of signal (hop0) , based on pixel's coordinates 
-							//----------------------------------------------------------
-							
-							//inner pixels ( mostly of them. that is the reason for considering the 1st option)
-							//---------------------------------------------------------------------------------
-							 if ((y>b.yini) &&(x>b.xini) && x!=b.downsampled_xfin){
-								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-
-								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
-							}
-							//initial pix
-							//-----------
-							if (x==0 && y==0) {  
-								hop0=oc;//first pixel always is perfectly predicted! :-)  
-							}	
-							//upper side of the image
-						    //-----------------------
-							else if (y==0 && x>b.xini) {
-								hop0=result_YUV[x-1];
-							}
-							else if (y==0 && x==b.xini) {
-								hop0=boundaries_YUV[x-1];
-							}
-							
-							//left side of the image
-							//------------------------
-							else if ((x==0) && (y>b.yini)){
-								
-								hop0=result_YUV[pix-img.width];
-								//hop0=img.boundaries_YUV[0][pix-img.width];
-								last_small_hop=false;
-								
-								//comento esto 12/09/2014
-								hop1=max_hop1;
-							}
-			                else if ((x==0) && (y==b.yini)){
-								
-								//hop0=result_YUV[pix-img.width];
-								hop0=img.boundaries_YUV[0][pix-img.width];
-								last_small_hop=false;
-								
-								//comento esto 12/09/2014
-								hop1=max_hop1;
-								
-							}
-							//left side of the block
-							//------------------------
-							else if ((x==b.xini) && (y>b.yini)){
-								//System.out.print("zulu");
-									hop0=(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7;
-									//hop0=img.boundaries_YUV[0][pix-1];
-									//hop0=(4*img.boundaries_YUV[0][pix-1]+4*result_YUV[pix+1-img.width])/8;
-									//hop0=result_YUV[pix+1-img.width];//oc;//img.boundaries_YUV[0][pix-1];
-									//System.out.println(" el boundary v tiene color:"+img.boundaries_YUV[0][pix-1]+"  at  x:"+(x-1)+" ,y:"+y);
-									//hop0=oc;
-							}
-							//up-left corner of block
-							//--------------
-							else if ((x==b.xini) && (y==b.yini)){
-								//System.out.print("zulu");
-								hop0=(4*img.boundaries_YUV[0][pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;	
-							}
-							
-							
-							
-							//right side of block (and right side of image. is the same case)
-							//-----------------------------------------------------------------
-							else if ((x==b.downsampled_xfin) && (y>b.yini)) {
-								hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;	
-								
-								
-								//hop0=(4*result_YUV[pix-1]+0*result_YUV[pix-img.width])/4;
-							}
-							
-								
-							//upper side of block
-							//---------------------
-						    else if (y==b.yini && x>0 && x!=b.downsampled_xfin) {
-						    	hop0=(4*result_YUV[pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;	
-						    	//hop0=oc;//(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix+1-img.width])/6;
-						    	//hop0=(4*result_YUV[pix-1]+1*img.boundaries_YUV[0][pix+1-img.width])/5;
-						    	//hop0=result_YUV[pix-1];
-						    	
-						    	//hop0=oc;
-						    }
-						    else if ((x==b.downsampled_xfin) && (y==b.yini)) {
-								//hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;
-								hop0=(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix-img.width])/6;
-								//if (result_YUV[pix-img.width]==0) System.out.println(" ey");
-							}
-						    	
-							//hop0=oc;
-							
-							
-							//hops computation. initial values for errors
-							emin=256;//current minimum prediction error 
-							int e2=0;//computed error for each hop 
-
-							//hop0 is prediction
-							//if (hop0>255)hop0=255;
-							//else if (hop0<0) hop0=0; 
-
-
-							// el array PCC habria que escogerlo en funcion de kini
-							
-							
-							//positive hops computation
-							//-------------------------
-							if (oc-hop0>=0) 
-							{
-								for (int j=4;j<=8;j++) {
-									try{
-									e2=oc-pccr[hop1][hop0][rmax][j];
-									}catch (Exception e){
-										System.out.println("j:"+j+" hop1:"+hop1+"  hop0:"+hop0+"  x:"+x+"  y:"+y+"  b.xini:"+b.xini+" b.yini:"+b.yini+" b.downsampled_xfin:"+b.downsampled_xfin+"  up:"+result_YUV[pix-img.width]+" izq:"+result_YUV[pix-1]+ " debe ser:"+(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7+ "boundaries es:"+img.boundaries_YUV[0][pix-1]);
-										System.exit(0);
-									}
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
-							//negative hops computation
-							//-------------------------
-							else 
-							{
-								//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
-								//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
-								for (int j=4;j>=0;j--) {
-									e2=pccr[hop1][hop0][rmax][j]-oc;
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
-
-							//assignment of final color value
-							//--------------------------------
-							result_YUV[pix]=pccr[hop1][hop0][rmax][hop_number];
-							//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
-							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
-							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
-
-							//tunning hop1 for the next hop
-							//-------------------------------
-							boolean small_hop=false;
-							//if (hop_number>=6) small_hop=true;
-							//if (hop_number<=6 && hop_number>=2) small_hop=true;
-							if (hop_number<=5 && hop_number>=3) small_hop=true;
-							else small_hop=false;     
-
-							if( (small_hop) && (last_small_hop))  {
-								hop1=hop1-1;
-								if (hop1<min_hop1) hop1=min_hop1;
-							} 
-							else {
-								hop1=max_hop1;
-							}
-							//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
-
-							//lets go for the next pixel
-							//--------------------------
-							last_small_hop=small_hop;
-							
-							
-							
-							//pix++;            
-						}//for x
-						//esto es necesario al funcionar con bloques
-						//pix+=img.width-b.lx_sc+1;
-					}//for y
-
-				}//end function
-				//**************************************************************************************
-				//**************************************************************************************************
-				/**
-				 * This is a very fast LHE quantization function, used for initial quantization in order to 
-				 * perform Perceptual Relevance Metrics.
-				 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
-				 * require more complex calculation (but over a reduced image)
-				 * 
-				 * image luminance array is the input for this function. 
-				 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
-				 *   Image luminance array is not modified
-				 * 
-				 * hops numbering:
-				 *   >negative hops: 0,1,2,3
-				 *   >null hop: 4
-				 *   >positive hops: 5,6,7,8
-				 * 
-				 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
-				 *   algorithm to choose next hop
-				 * 
-				 * 
-				 * @param hops
-				 * @param result_YUV
-				 */
-				public void quantizeOneHopPerPixel_R(int[] hops,int[] result_YUV)
+					for (int j=4;j<=8;j++) {
+						try{
+						e2=oc-pccr[hop1][hop0][rmax][j];
+						}catch (Exception e){
+							System.out.println("j:"+j+" hop1:"+hop1+"  hop0:"+hop0+"  x:"+x+"  y:"+y+"  b.xini:"+b.xini+" b.yini:"+b.yini+" b.downsampled_xfin:"+b.downsampled_xfin+"  up:"+result_YUV[pix-img.width]+" izq:"+result_YUV[pix-1]+ " debe ser:"+(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7+ "boundaries es:"+img.boundaries_YUV[0][pix-1]);
+							System.exit(0);
+						}
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				//negative hops computation
+				//-------------------------
+				else 
 				{
-					System.out.println("quantizying...");
+					//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
+					//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
+					for (int j=4;j>=0;j--) {
+						e2=pccr[hop1][hop0][rmax][j]-oc;
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+	
+				//assignment of final color value
+				//--------------------------------
+				result_YUV[pix]=pccr[hop1][hop0][rmax][hop_number];
+				//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
+				//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
+				hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+	
+				//tunning hop1 for the next hop
+				//-------------------------------
+				boolean small_hop=false;
+				//if (hop_number>=6) small_hop=true;
+				//if (hop_number<=6 && hop_number>=2) small_hop=true;
+				if (hop_number<=5 && hop_number>=3) small_hop=true;
+				else small_hop=false;     
+	
+				if( (small_hop) && (last_small_hop))  {
+					hop1=hop1-1;
+					if (hop1<min_hop1) hop1=min_hop1;
+				} 
+				else {
+					hop1=max_hop1;
+				}
+				//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
+	
+				//lets go for the next pixel
+				//--------------------------
+				last_small_hop=small_hop;
+				
+				
+				
+				//pix++;            
+			}//for x
+			//esto es necesario al funcionar con bloques
+			//pix+=img.width-b.lx_sc+1;
+		}//for y
+	
+	}//end function
+	//**************************************************************************************
+	//**************************************************************************************************
+	/**
+	 * This is a very fast LHE quantization function, used for initial quantization in order to 
+	 * perform Perceptual Relevance Metrics.
+	 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
+	 * require more complex calculation (but over a reduced image)
+	 * 
+	 * image luminance array is the input for this function. 
+	 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
+	 *   Image luminance array is not modified
+	 * 
+	 * hops numbering:
+	 *   >negative hops: 0,1,2,3
+	 *   >null hop: 4
+	 *   >positive hops: 5,6,7,8
+	 * 
+	 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
+	 *   algorithm to choose next hop
+	 * 
+	 * 
+	 * @param hops
+	 * @param result_YUV
+	 */
+	public void quantizeOneHopPerPixel_R(int[] hops,int[] result_YUV)
+	{
+		System.out.println("quantizying...");
+		/*
+		int iterations=1000;
+		long start_time = System.currentTimeMillis();
+		for (int xy=0;xy<iterations;xy++){
+			*/
+		//ESTA ES LA FUNCION BUENA
+		//img.width=1920;
+		//img.height=1080;
+	
+		//img.width=1280;
+		//img.height=720;
+	
+		//img.width=720;
+		//img.height=576;
+		//img.width=429;
+		//img.height=429;
+		//img.width=576;
+		//img.height=256;
+		int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+		int min_hop1=4;//4;// 
+		int start_hop1=(max_hop1+min_hop1)/2;
+		
+		
+		int hop1=start_hop1;//max_hop1;
+		int hop0=0; // predicted signal
+		int emin;//error of predicted signal
+		int hop_number=4;//selected hop // 4 is NULL HOP
+		int oc=0;// original color
+		int pix=0;//pixel possition, from 0 to image size        
+		boolean last_small_hop=false;// indicates if last hop is small
+	
+		
+		float error_center=0;
+		float error_avg=0;
+		
+		for (int y=0;y<img.height;y++)  {
+			for (int x=0;x<img.width;x++)  {
+	
+				oc=img.YUV[0][pix];
+	
+				//prediction of signal (hop0) , based on pixel's coordinates 
+				//----------------------------------------------------------
+				if ((y>0) &&(x>0) && x!=img.width-1){
+					hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+	
+					//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
+				}
+				else if ((x==0) && (y>0)){
+					hop0=result_YUV[pix-img.width];
+					
+					
+					last_small_hop=false;
+					
+					
+					//hop1=max_hop1;
+					hop1=start_hop1;
+				}
+				else if ((x==img.width-1) && (y>0)) {
+					hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;				
+				}else if (y==0 && x>0) {
+					hop0=result_YUV[x-1];
+				}else if (x==0 && y==0) {  
+					hop0=oc;//first pixel always is perfectly predicted! :-)  
+				}			
+	
+				
+				//paeth
+				/*
+				int A=0;
+				int B=0;
+				int C=0;
+				if (x>0) A=result_YUV[pix-1];
+				if (y>0) B=result_YUV[pix-img.width];
+				if (x>0 && y>0) C=result_YUV[pix-img.width-1];
+				if (x==0) {A=B;C=B;}
+				if (y==0) {B=A;C=A;}
+				if (x==0 && y==0)hop0=oc;
+				else
+				{
+					int pred=A+B-C;
+					int a1=Math.abs(A-pred);
+					int b1=Math.abs(B-pred);
+					int c1=Math.abs(C-pred);
+					if (a1<=b1 && a1<=c1) hop0=A;
+					else if (b1<=a1 && b1<=c1) hop0=B;
+					else hop0=C;
+					//System.out.println("paeth");
+				}
+				*/
+				
+				
+	
+				//hops computation. initial values for errors
+				emin=256;//current minimum prediction error 
+				int e2=0;//computed error for each hop 
+	
+				//hop0 is prediction
+				//if (hop0>255)hop0=255;
+				//else if (hop0<0) hop0=0; 
+	
+				//max_hop1=16;//(int)((float)hop0 *0.02f +0.5f);
+				//System.out.println("hop1max:"+max_hop1);
+				//positive hops computation
+				//-------------------------
+				int rmax=25;//40;
+				//hop1=8;
+				
+				//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
+				//if (min_hop1<4) min_hop1=4;
+				//if (hop1<min_hop1) hop1=min_hop1;
+				
+				if (oc-hop0>=0) 
+				{
+					for (int j=4;j<=8;j++) {
+					//for (int j=4;j<=5;j++) {
+						e2=oc-pccr[hop1][hop0][rmax][j];
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				//negative hops computation
+				//-------------------------
+				else 
+				{
+					//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
+					//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
+					for (int j=4;j>=0;j--) {
+					//	for (int j=4;j>=3;j--) {
+						e2=pccr[hop1][hop0][rmax][j]-oc;
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+	
+				//29/12/2014
+				
+				
+				//colin
+				
+				rmax=25;
+				int hop0i=pccr[hop1][hop0][rmax][4];
+				
+				
+				int[] colin= new int[9];
+				colin[4]=hop0i;//pccr[hop1][hop0i][rmax][4];// 
+				colin[8]=pccr[hop1][hop0i][rmax][8];;//AJUSTE. no puedo considerar el 255 pq puede estar muy lejos
+				colin[0]=pccr[hop1][hop0i][rmax][0];//AJUSTE no puedo considerar el 0 pq puede estar muy lejos
+				colin[3]=pccr[hop1][hop0i][rmax][3];
+				colin[5]=pccr[hop1][hop0i][rmax][5];
+			
+				int startcolin=6;
+				int endcolin=3;
+				
+				for (int j=startcolin; j<8;j++)
+					{colin[j]=(int)(+1f+(((float)pccr[hop1][hop0i][rmax][j-1]+(float)pccr[hop1][hop0i][rmax][j])/2f+((float)pccr[hop1][hop0i][rmax][j]+(float)pccr[hop1][hop0i][rmax][j+1])/2f)/2f);
+					}
+					
+				for (int j=1; j<endcolin;j++)
+				{	colin[j]=(int)(-0.5f+(((float)pccr[hop1][hop0i][rmax][j-1]+(float)pccr[hop1][hop0i][rmax][j])/2f+((float)pccr[hop1][hop0i][rmax][j]+(float)pccr[hop1][hop0i][rmax][j+1])/2f)/2f);
+			    }
+			
+				
+				//assignment of final color value
+				//--------------------------------
+				result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+				//result_YUV[pix]=colin[hop_number];//pccr[hop1][hop0][25][hop_number];
+				
+				//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
+				//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
+				hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+	
+				
+				//calculo de errores medios
+				//---------------------------
+				error_center+=(oc-result_YUV[pix]);
+				error_avg+=Math.abs((oc-result_YUV[pix]));
+				
+				//tunning hop1 for the next hop
+				//-------------------------------
+				boolean small_hop=false;
+				//if (hop_number>=6) small_hop=true;
+				//if (hop_number<=6 && hop_number>=2) small_hop=true;
+				if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+				else small_hop=false;     
+	
+				if( (small_hop) && (last_small_hop))  {
+					hop1=hop1-1;
+					if (hop1<min_hop1) hop1=min_hop1;
+				} 
+				else {
+					hop1=max_hop1;
+				}
+				//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
+	
+				//lets go for the next pixel
+				//--------------------------
+				last_small_hop=small_hop;
+				pix++;            
+			}//for x
+		}//for y
+		
+		/*
+		}//iterations
+		
+		long end_time = System.currentTimeMillis();
+		double total_time=end_time-start_time;
+		double tpp=total_time/(img.width*img.height*iterations);
+		double tpi=total_time/(iterations);
+		System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
+		*/
+		System.out.println("quantization done");
+		
+		System.out.println("center of  error:"+error_center/(img.width*img.height));
+		System.out.println("average of  error:"+error_avg/(img.width*img.height));
+		System.out.println("----------------------------------------------------------");
+		
+		
+		
+	}//end function
+	
+	
+	//**************************************************************************************
+	//**************************************************************************************************
+	/**
+	 * This is a very fast LHE quantization function, used for initial quantization in order to 
+	 * perform Perceptual Relevance Metrics.
+	 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
+	 * require more complex calculation (but over a reduced image)
+	 * 
+	 * image luminance array is the input for this function. 
+	 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
+	 *   Image luminance array is not modified
+	 * 
+	 * hops numbering:
+	 *   >negative hops: 0,1,2,3
+	 *   >null hop: 4
+	 *   >positive hops: 5,6,7,8
+	 * 
+	 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
+	 *   algorithm to choose next hop
+	 * 
+	 * 
+	 * @param hops
+	 * @param result_YUV
+	 */
+	public void quantizeOneHopPerPixel_R_withdelta(int[] hops,int[] result_YUV)
+	{
+		System.out.println("quantizying...");
+	
+		int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+		int min_hop1=4;//4;// 
+		int start_hop1=(max_hop1+min_hop1)/2;
+		int delta[] = new int[img.width*img.height];
+		int delta_prediction[] = new int[img.width*img.height];
+	
+		int hop1=start_hop1;//max_hop1;
+		int hop0=0; // predicted signal
+		int emin;//error of predicted signal
+		int hop_number=4;//selected hop // 4 is NULL HOP
+		int oc=0;// original color
+		int pix=0;//pixel possition, from 0 to image size        
+		boolean last_small_hop=false;// indicates if last hop is small
+	
+	
+		for (int y=0;y<img.height;y++)  {
+			for (int x=0;x<img.width;x++)  {
+				
+				if ((y>0) &&(x>0)){
+					delta[pix] = (img.YUV[0][pix] - ((result_YUV[pix-1] + result_YUV[pix-img.width])/2))/2 + 128;
+				} else if ((x==0) && (y>0)){
+					delta[pix] = (img.YUV[0][pix] - result_YUV[pix-img.width])/2 + 128;
+				}else if (y==0 && x>0) {
+					delta[pix] = (img.YUV[0][pix] - result_YUV[pix-1])/2 + 128;
+				}else if (x==0 && y==0) {  
+					delta[pix] = 128;
+				}	
+				
+				if (delta[pix] > 255) delta[pix] = 255;
+	            if (delta[pix] < 0) delta[pix] = 0;
+	
+				oc=delta[pix];
+	
+				//prediction of signal (hop0) , based on pixel's coordinates 
+				//----------------------------------------------------------
+				if ((y>0) &&(x>0) && x!=img.width-1){
+					hop0=(4*delta_prediction[pix-1]+3*delta_prediction[pix+1-img.width])/7;	
+				}
+				else if ((x==0) && (y>0)){
+					hop0=delta_prediction[pix-img.width];							
+					last_small_hop=false;								
+					hop1=start_hop1;
+				}
+				else if ((x==img.width-1) && (y>0)) {
+					hop0=(4*delta_prediction[pix-1]+2*delta_prediction[pix-img.width])/6;				
+				}else if (y==0 && x>0) {
+					hop0=delta_prediction[x-1];
+				}else if (x==0 && y==0) {  
+					hop0=oc;//first pixel always is perfectly predicted! :-)  
+				}			
+	
+				//hops computation. initial values for errors
+				emin=256;//current minimum prediction error 
+				int e2=0;//computed error for each hop 
+	
+				//positive hops computation
+				//-------------------------
+				int rmax=25;//40;
+			
+				
+				if (oc-hop0>=0) 
+				{
+					for (int j=4;j<=8;j++) {
+					//for (int j=4;j<=5;j++) {
+						e2=oc-pccr[hop1][hop0][rmax][j];
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				//negative hops computation
+				//-------------------------
+				else 
+				{
+					for (int j=4;j>=0;j--) {
+					//	for (int j=4;j>=3;j--) {
+						e2=pccr[hop1][hop0][rmax][j]-oc;
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+	
+				
+				//assignment of final color value
+				//--------------------------------
+				delta_prediction[pix]=pccr[hop1][hop0][25][hop_number];//final luminance
+				
+				if ((y>0) &&(x>0)){
+					result_YUV[pix] = (result_YUV[pix-1] + result_YUV[pix-img.width])/2 + ((delta_prediction[pix] - 128) * 2);
+				} else if ((x==0) && (y>0)){
+					result_YUV[pix] = result_YUV[pix-img.width] + ((delta_prediction[pix] - 128) * 2);	
+				}else if (y==0 && x>0) {
+					result_YUV[pix] = result_YUV[pix-1] + ((delta_prediction[pix] - 128) * 2);
+				}else if (x==0 && y==0) {  
+					result_YUV[pix] = img.YUV[0][pix];
+				}
+				
+				if (result_YUV[pix]<0) result_YUV[pix] = 0;
+				if (result_YUV[pix]>255) result_YUV[pix] = 255;
+	
+				hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+	
+				//tunning hop1 for the next hop
+				//-------------------------------
+				boolean small_hop=false;
+				//if (hop_number>=6) small_hop=true;
+				//if (hop_number<=6 && hop_number>=2) small_hop=true;
+				if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+				else small_hop=false;     
+	
+				if( (small_hop) && (last_small_hop))  {
+					hop1=hop1-1;
+					if (hop1<min_hop1) hop1=min_hop1;
+				} 
+				else {
+					hop1=max_hop1;
+				}
+	
+				//lets go for the next pixel
+				//--------------------------
+				last_small_hop=small_hop;
+				pix++;            
+			}//for x
+		}//for y
+		
+		/*
+		}//iterations
+		
+		long end_time = System.currentTimeMillis();
+		double total_time=end_time-start_time;
+		double tpp=total_time/(img.width*img.height*iterations);
+		double tpi=total_time/(iterations);
+		System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
+		*/
+		System.out.println("quantization done");
+	}//end function
+	
+	//**************************************************************************************
+	/**
+	 * This is a very fast LHE quantization function, used for initial quantization in order to 
+	 * perform Perceptual Relevance Metrics.
+	 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
+	 * require more complex calculation (but over a reduced image)
+	 * 
+	 * image luminance array is the input for this function. 
+	 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
+	 *   Image luminance array is not modified
+	 * 
+	 * hops numbering:
+	 *   >negative hops: 0,1,2,3
+	 *   >null hop: 4
+	 *   >positive hops: 5,6,7,8
+	 * 
+	 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
+	 *   algorithm to choose next hop
+	 * 
+	 * 
+	 * @param hops
+	 * @param result_YUV
+	 */
+	public void quantizeOneHopPerPixel_adaptative(int[] hops,int[] result_YUV)
+	{
+		System.out.println("quantizying...");
+		
+		int A,B,C,D;
+
+		int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+		int min_hop1=4;//4;// 
+		int start_hop1=(max_hop1+min_hop1)/2;
+		
+		
+		int hop1=start_hop1;//max_hop1;
+		int hop0=0; // predicted signal
+		int emin;//error of predicted signal
+		int hop_number=4;//selected hop // 4 is NULL HOP
+		int oc=0;// original color
+		int pix=0;//pixel possition, from 0 to image size        
+		boolean last_small_hop=false;// indicates if last hop is small
+	
+		
+		float error_center=0;
+		float error_avg=0;
+		
+		int size = 4;
+		int []p = new int[size];
+		int count[] = new int[size];
+		int selected;
+		
+		for (int y=0;y<img.height;y++)  {
+			for (int x=0;x<img.width;x++)  {
+	
+				oc=img.YUV[0][pix];
+
+				//prediction of signal (hop0) , based on pixel's coordinates 
+				//----------------------------------------------------------
+				if ((y>0) &&(x>0) && x!=img.width-1){
+					
+					A = result_YUV[pix-1];
+					B = result_YUV[pix-img.width-1];
+					C = result_YUV[pix-img.width];
+					D = result_YUV[pix-img.width + 1];					
+					
+					p[0] = D;
+					p[1] = C;
+					p[2] = B;
+					p[3] = A;
+					
 					/*
-					int iterations=1000;
-					long start_time = System.currentTimeMillis();
-					for (int xy=0;xy<iterations;xy++){
-						*/
-					//ESTA ES LA FUNCION BUENA
-					//img.width=1920;
-					//img.height=1080;
-
-					//img.width=1280;
-					//img.height=720;
-
-					//img.width=720;
-					//img.height=576;
-					//img.width=429;
-					//img.height=429;
-					//img.width=576;
-					//img.height=256;
-					int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
-					int min_hop1=4;//4;// 
-					int start_hop1=(max_hop1+min_hop1)/2;
-					
-					
-					int hop1=start_hop1;//max_hop1;
-					int hop0=0; // predicted signal
-					int emin;//error of predicted signal
-					int hop_number=4;//selected hop // 4 is NULL HOP
-					int oc=0;// original color
-					int pix=0;//pixel possition, from 0 to image size        
-					boolean last_small_hop=false;// indicates if last hop is small
-
-					
-					float error_center=0;
-					float error_avg=0;
-					
-					for (int y=0;y<img.height;y++)  {
-						for (int x=0;x<img.width;x++)  {
-
-							oc=img.YUV[0][pix];
-
-							//prediction of signal (hop0) , based on pixel's coordinates 
-							//----------------------------------------------------------
-							if ((y>0) &&(x>0) && x!=img.width-1){
-								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-
-								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
-							}
-							else if ((x==0) && (y>0)){
-								hop0=result_YUV[pix-img.width];
-								
-								
-								last_small_hop=false;
-								
-								
-								//hop1=max_hop1;
-								hop1=start_hop1;
-							}
-							else if ((x==img.width-1) && (y>0)) {
-								hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;				
-							}else if (y==0 && x>0) {
-								hop0=result_YUV[x-1];
-							}else if (x==0 && y==0) {  
-								hop0=oc;//first pixel always is perfectly predicted! :-)  
-							}			
-
-							
-							//paeth
-							/*
-							int A=0;
-							int B=0;
-							int C=0;
-							if (x>0) A=result_YUV[pix-1];
-							if (y>0) B=result_YUV[pix-img.width];
-							if (x>0 && y>0) C=result_YUV[pix-img.width-1];
-							if (x==0) {A=B;C=B;}
-							if (y==0) {B=A;C=A;}
-							if (x==0 && y==0)hop0=oc;
-							else
-							{
-								int pred=A+B-C;
-								int a1=Math.abs(A-pred);
-								int b1=Math.abs(B-pred);
-								int c1=Math.abs(C-pred);
-								if (a1<=b1 && a1<=c1) hop0=A;
-								else if (b1<=a1 && b1<=c1) hop0=B;
-								else hop0=C;
-								//System.out.println("paeth");
-							}
-							*/
-							
-							
-
-							//hops computation. initial values for errors
-							emin=256;//current minimum prediction error 
-							int e2=0;//computed error for each hop 
-
-							//hop0 is prediction
-							//if (hop0>255)hop0=255;
-							//else if (hop0<0) hop0=0; 
-
-							//max_hop1=16;//(int)((float)hop0 *0.02f +0.5f);
-							//System.out.println("hop1max:"+max_hop1);
-							//positive hops computation
-							//-------------------------
-							int rmax=25;//40;
-							//hop1=8;
-							
-							//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
-							//if (min_hop1<4) min_hop1=4;
-							//if (hop1<min_hop1) hop1=min_hop1;
-							
-							if (oc-hop0>=0) 
-							{
-								for (int j=4;j<=8;j++) {
-								//for (int j=4;j<=5;j++) {
-									e2=oc-pccr[hop1][hop0][rmax][j];
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
-							//negative hops computation
-							//-------------------------
-							else 
-							{
-								//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
-								//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
-								for (int j=4;j>=0;j--) {
-								//	for (int j=4;j>=3;j--) {
-									e2=pccr[hop1][hop0][rmax][j]-oc;
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
-
-							//29/12/2014
-							
-							
-							//colin
-							
-							rmax=25;
-							int hop0i=pccr[hop1][hop0][rmax][4];
-							
-							
-							int[] colin= new int[9];
-							colin[4]=hop0i;//pccr[hop1][hop0i][rmax][4];// 
-							colin[8]=pccr[hop1][hop0i][rmax][8];;//AJUSTE. no puedo considerar el 255 pq puede estar muy lejos
-							colin[0]=pccr[hop1][hop0i][rmax][0];//AJUSTE no puedo considerar el 0 pq puede estar muy lejos
-							colin[3]=pccr[hop1][hop0i][rmax][3];
-							colin[5]=pccr[hop1][hop0i][rmax][5];
-						
-							int startcolin=6;
-							int endcolin=3;
-							
-							for (int j=startcolin; j<8;j++)
-								{colin[j]=(int)(+1f+(((float)pccr[hop1][hop0i][rmax][j-1]+(float)pccr[hop1][hop0i][rmax][j])/2f+((float)pccr[hop1][hop0i][rmax][j]+(float)pccr[hop1][hop0i][rmax][j+1])/2f)/2f);
-								}
-								
-							for (int j=1; j<endcolin;j++)
-							{	colin[j]=(int)(-0.5f+(((float)pccr[hop1][hop0i][rmax][j-1]+(float)pccr[hop1][hop0i][rmax][j])/2f+((float)pccr[hop1][hop0i][rmax][j]+(float)pccr[hop1][hop0i][rmax][j+1])/2f)/2f);
-						    }
-						
-							
-							//assignment of final color value
-							//--------------------------------
-							result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
-							//result_YUV[pix]=colin[hop_number];//pccr[hop1][hop0][25][hop_number];
-							
-							//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
-							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
-							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
-
-							
-							//calculo de errores medios
-							//---------------------------
-							error_center+=(oc-result_YUV[pix]);
-							error_avg+=Math.abs((oc-result_YUV[pix]));
-							
-							//tunning hop1 for the next hop
-							//-------------------------------
-							boolean small_hop=false;
-							//if (hop_number>=6) small_hop=true;
-							//if (hop_number<=6 && hop_number>=2) small_hop=true;
-							if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
-							else small_hop=false;     
-
-							if( (small_hop) && (last_small_hop))  {
-								hop1=hop1-1;
-								if (hop1<min_hop1) hop1=min_hop1;
-							} 
-							else {
-								hop1=max_hop1;
-							}
-							//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
-
-							//lets go for the next pixel
-							//--------------------------
-							last_small_hop=small_hop;
-							pix++;            
-						}//for x
-					}//for y
-					
-					/*
-					}//iterations
-					
-					long end_time = System.currentTimeMillis();
-					double total_time=end_time-start_time;
-					double tpp=total_time/(img.width*img.height*iterations);
-					double tpi=total_time/(iterations);
-					System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
+					p[4] = (C+D)/2;
+					p[5] = (2*C+D)/3;
+					p[6] = (C+2*D)/3;
+					p[7] = (C+3*D)/4;
+					p[8] = (3*C+D)/4;
+					p[9] = (4*C+D)/5;
+					p[10] = (B+D)/2;
+					p[11] = (B+2*D)/3;
+					p[12] = (B+C)/2;
+					p[13] = (A+D)/2;
 					*/
-					System.out.println("quantization done");
 					
-					System.out.println("center of  error:"+error_center/(img.width*img.height));
-					System.out.println("average of  error:"+error_avg/(img.width*img.height));
-					System.out.println("----------------------------------------------------------");
+					selected = 0;
+					hop0=D;
+					for (int i=0; i<p.length; i++) {
+						if (Math.abs(oc - p[i]) < Math.abs(oc-hop0)) {
+							hop0 = p[i];
+							selected = i;
+						}
+					}
 					
-					
-					
-				}//end function
+					count[selected]++;
+					/*
+					if (selected == 3) {
+						System.out.println("A " + A + " B " + B + " C " + C + " D " + D + " oc " + oc);
+					}
+					*/
+				}
+				else if ((x==0) && (y>0)){
+					hop0=result_YUV[pix-img.width];									
+					last_small_hop=false;										
+					hop1=start_hop1;
+				}
+				else if ((x==img.width-1) && (y>0)) {
+					hop0=(result_YUV[pix-1]+result_YUV[pix-img.width])/2;		
+				}else if (y==0 && x>0) {
+					hop0=result_YUV[x-1];
+				}else if (x==0 && y==0) {  
+					hop0=oc;//first pixel always is perfectly predicted! :-)  
+				}		
 				
+
+				//hops computation. initial values for errors
+				emin=256;//current minimum prediction error 
+				int e2=0;//computed error for each hop 
+			
+				//positive hops computation
+				//-------------------------
+				int rmax=25;//40;
 				
-				//**************************************************************************************
-				//**************************************************************************************************
-				/**
-				 * This is a very fast LHE quantization function, used for initial quantization in order to 
-				 * perform Perceptual Relevance Metrics.
-				 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
-				 * require more complex calculation (but over a reduced image)
-				 * 
-				 * image luminance array is the input for this function. 
-				 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
-				 *   Image luminance array is not modified
-				 * 
-				 * hops numbering:
-				 *   >negative hops: 0,1,2,3
-				 *   >null hop: 4
-				 *   >positive hops: 5,6,7,8
-				 * 
-				 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
-				 *   algorithm to choose next hop
-				 * 
-				 * 
-				 * @param hops
-				 * @param result_YUV
-				 */
-				public void quantizeOneHopPerPixel_R_withdelta(int[] hops,int[] result_YUV)
+				if (oc-hop0>=0) 
 				{
-					System.out.println("quantizying...");
+					for (int j=4;j<=8;j++) {
+						e2=oc-pccr[hop1][hop0][rmax][j];
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				//negative hops computation
+				//-------------------------
+				else 
+				{
+					for (int j=4;j>=0;j--) {
+						e2=pccr[hop1][hop0][rmax][j]-oc;
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				
+				rmax=25;
+				
+				//assignment of final color value
+				//--------------------------------
+				result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+				hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+	
+				
+				//calculo de errores medios
+				//---------------------------
+				error_center+=(oc-result_YUV[pix]);
+				error_avg+=Math.abs((oc-result_YUV[pix]));
+				
+				//tunning hop1 for the next hop
+				//-------------------------------
+				boolean small_hop=false;
+				if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+				else small_hop=false;     
+	
+				if( (small_hop) && (last_small_hop))  {
+					hop1=hop1-1;
+					if (hop1<min_hop1) hop1=min_hop1;
+				} 
+				else {
+					hop1=max_hop1;
+				}
+	
+				//lets go for the next pixel
+				//--------------------------
+				last_small_hop=small_hop;
+				pix++;            
+			}//for x
+		}//for y
+		
+		System.out.println("Selected predictions were:" );
+		
+		for (int i=0; i<p.length; i++) {
+			System.out.println("prediction " + i + ": " + count[i] + " times");
+		}
+		
+		System.out.println("quantization done");
+		
+		System.out.println("center of  error:"+error_center/(img.width*img.height));
+		System.out.println("average of  error:"+error_avg/(img.width*img.height));
+		System.out.println("----------------------------------------------------------");
+		
+	}//end function
+	
+	
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	//**************************************************************************************
+		/**
+		 * This is a very fast LHE quantization function, used for initial quantization in order to 
+		 * perform Perceptual Relevance Metrics.
+		 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
+		 * require more complex calculation (but over a reduced image)
+		 * 
+		 * image luminance array is the input for this function. 
+		 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
+		 *   Image luminance array is not modified
+		 * 
+		 * hops numbering:
+		 *   >negative hops: 0,1,2,3
+		 *   >null hop: 4
+		 *   >positive hops: 5,6,7,8
+		 * 
+		 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
+		 *   algorithm to choose next hop
+		 * 
+		 * 
+		 * @param hops
+		 * @param result_YUV
+		 */
+		public void quantizeOneHopPerPixel_adaptativeFuerzabruta(int[] hops,int[] result_YUV)
+		{
+			System.out.println("quantizying...");
+			
+			int A,B,C,D;
 
-					int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
-					int min_hop1=4;//4;// 
-					int start_hop1=(max_hop1+min_hop1)/2;
-					int delta[] = new int[img.width*img.height];
-					int delta_prediction[] = new int[img.width*img.height];
-
-					int hop1=start_hop1;//max_hop1;
-					int hop0=0; // predicted signal
-					int emin;//error of predicted signal
-					int hop_number=4;//selected hop // 4 is NULL HOP
-					int oc=0;// original color
-					int pix=0;//pixel possition, from 0 to image size        
-					boolean last_small_hop=false;// indicates if last hop is small
+			int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+			int min_hop1=4;//4;// 
+			int start_hop1=(max_hop1+min_hop1)/2;
+			
+			
+			int hop1=start_hop1;//max_hop1;
+			int hop0=0; // predicted signal
+			int emin;//error of predicted signal
+			int hop_number=4;//selected hop // 4 is NULL HOP
+			int oc=0;// original color
+			int pix=0;//pixel possition, from 0 to image size        
+			boolean last_small_hop=false;// indicates if last hop is small
+		
+			
+			float error_center=0;
+			float error_avg=0;
+			
+			int prediction;
+			int max_const = 10;
+			int selected_count[][][][] = new int [max_const][max_const][max_const][max_const];
+			int selected_a, selected_b, selected_c, selected_d;
 
 			
-					for (int y=0;y<img.height;y++)  {
-						for (int x=0;x<img.width;x++)  {
-							
-							if ((y>0) &&(x>0)){
-								delta[pix] = (img.YUV[0][pix] - ((result_YUV[pix-1] + result_YUV[pix-img.width])/2))/2 + 128;
-							} else if ((x==0) && (y>0)){
-								delta[pix] = (img.YUV[0][pix] - result_YUV[pix-img.width])/2 + 128;
-							}else if (y==0 && x>0) {
-								delta[pix] = (img.YUV[0][pix] - result_YUV[pix-1])/2 + 128;
-							}else if (x==0 && y==0) {  
-								delta[pix] = 128;
-							}	
-							
-							if (delta[pix] > 255) delta[pix] = 255;
-				            if (delta[pix] < 0) delta[pix] = 0;
-
-							oc=delta[pix];
-
-							//prediction of signal (hop0) , based on pixel's coordinates 
-							//----------------------------------------------------------
-							if ((y>0) &&(x>0) && x!=img.width-1){
-								hop0=(4*delta_prediction[pix-1]+3*delta_prediction[pix+1-img.width])/7;	
-							}
-							else if ((x==0) && (y>0)){
-								hop0=delta_prediction[pix-img.width];							
-								last_small_hop=false;								
-								hop1=start_hop1;
-							}
-							else if ((x==img.width-1) && (y>0)) {
-								hop0=(4*delta_prediction[pix-1]+2*delta_prediction[pix-img.width])/6;				
-							}else if (y==0 && x>0) {
-								hop0=delta_prediction[x-1];
-							}else if (x==0 && y==0) {  
-								hop0=oc;//first pixel always is perfectly predicted! :-)  
-							}			
-
-							//hops computation. initial values for errors
-							emin=256;//current minimum prediction error 
-							int e2=0;//computed error for each hop 
-
-							//positive hops computation
-							//-------------------------
-							int rmax=25;//40;
+			for (int y=0;y<img.height;y++)  {
+				for (int x=0;x<img.width;x++)  {
+		
+					oc=img.YUV[0][pix];
+					
+		
+					//prediction of signal (hop0) , based on pixel's coordinates 
+					//----------------------------------------------------------
+					if ((y>0) &&(x>0) && x!=img.width-1){
 						
-							
-							if (oc-hop0>=0) 
-							{
-								for (int j=4;j<=8;j++) {
-								//for (int j=4;j<=5;j++) {
-									e2=oc-pccr[hop1][hop0][rmax][j];
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
-							//negative hops computation
-							//-------------------------
-							else 
-							{
-								for (int j=4;j>=0;j--) {
-								//	for (int j=4;j>=3;j--) {
-									e2=pccr[hop1][hop0][rmax][j]-oc;
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
-
-							
-							//assignment of final color value
-							//--------------------------------
-							delta_prediction[pix]=pccr[hop1][hop0][25][hop_number];//final luminance
-							
-							if ((y>0) &&(x>0)){
-								result_YUV[pix] = (result_YUV[pix-1] + result_YUV[pix-img.width])/2 + ((delta_prediction[pix] - 128) * 2);
-							} else if ((x==0) && (y>0)){
-								result_YUV[pix] = result_YUV[pix-img.width] + ((delta_prediction[pix] - 128) * 2);	
-							}else if (y==0 && x>0) {
-								result_YUV[pix] = result_YUV[pix-1] + ((delta_prediction[pix] - 128) * 2);
-							}else if (x==0 && y==0) {  
-								result_YUV[pix] = img.YUV[0][pix];
-							}
-							
-							if (result_YUV[pix]<0) result_YUV[pix] = 0;
-							if (result_YUV[pix]>255) result_YUV[pix] = 255;
-
-							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
-
-							//tunning hop1 for the next hop
-							//-------------------------------
-							boolean small_hop=false;
-							//if (hop_number>=6) small_hop=true;
-							//if (hop_number<=6 && hop_number>=2) small_hop=true;
-							if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
-							else small_hop=false;     
-
-							if( (small_hop) && (last_small_hop))  {
-								hop1=hop1-1;
-								if (hop1<min_hop1) hop1=min_hop1;
-							} 
-							else {
-								hop1=max_hop1;
-							}
-
-							//lets go for the next pixel
-							//--------------------------
-							last_small_hop=small_hop;
-							pix++;            
-						}//for x
-					}//for y
-					
-					/*
-					}//iterations
-					
-					long end_time = System.currentTimeMillis();
-					double total_time=end_time-start_time;
-					double tpp=total_time/(img.width*img.height*iterations);
-					double tpi=total_time/(iterations);
-					System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
-					*/
-					System.out.println("quantization done");
-				}//end function
-				
-				
-				//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-				public void quantizeDownsampledBlock_R(Block b, int[] hops,int[] result_YUV, int[] src_YUV,int[] boundaries_YUV)
-				{
-
-					
-					
-					//block b contains the coordinates to set the limits of this function
-					
-					
-					//some parts of this code are identical to the function quantizeOneHopPerPixel() 
-					
-					
-					int max_hop1=8;// hop1 interval 4..8
-					int min_hop1=4;//4;//
-					
-					//queda mejor 6 que el punto medio (en peppers)
-					int start_hop1=(max_hop1+min_hop1)/2;// hop1 at begining (up-left corner) of each block
-					
-					int hop1=start_hop1;
-					
-					int hop0=0; // predicted signal
-					int emin;//error of predicted signal
-					int hop_number=4;//selected hop // 4 is NULL HOP
-					int oc=0;// original color
-					
-					
-					int rmax=20;
-					//se escoge el juego de hops segun el PR cuantizado
-					
-					if (b.PRavg==1.0) rmax=30;//bordes abruptos, iconos, ruido 
-					//else if (b.PRavg>=0.625) rmax=25;//bordes 1,1,1,0.5
-					else if (b.PRavg>=0.75) rmax=25;//bordes 1,1,1,0.5
-					else if (b.PRavg>=0.5) rmax=25;//bordes 1,1,1,0.5 NUEVO 2/01/2015
-					//else if (b.PRavg>=0.625) rmax=20;//bordes 1,1,1,0.5
-					
-					//MEJORA 28/12/2014. alteramos h1max segun la PR y ademas el menor valor es 10 y no 8
-					if (b.PRavg==1.0) {max_hop1=16;}//16;
-					else if (b.PRavg>=0.75) {max_hop1=14;}//12;
-					else if (b.PRavg>=0.5) {max_hop1=12;}
-					else if (b.PRavg>=0.25) max_hop1=10;
-					//
-					//else if (b.PRavg>=0.125) max_hop1=10;
-					else max_hop1=8;// suave
-					
-					
-					//min_hop1=4;
-					
-					//PARA HACER PRUEBAS CON LHE BASICO SE PUEDE:
-					//PONER GRID A UN SOLO BLOQUE.
-					//HACER ESTAS IGUALDADES:
-					//max_hop1=8;
-					//rmax=25; //si pongo 20, lena gana 43 db
-					
-					
-					
-					//System.out.println("PRavg:"+b.PRavg);
-					//rmax=20;//valor original
-					//max_hop1=19;
-					//start_hop1=6;
-					
-					//System.out.println(" dato:"+img.width);
-					int pix=b.yini*img.width+b.xini;//initial pixel possition        
-					
-					
-					
-					boolean last_small_hop=false;// indicates if last hop is small
-					for (int y=b.yini;y<=b.downsampled_yfin;y++)  {
+						A = result_YUV[pix-1];
+						B = result_YUV[pix-img.width-1];
+						C = result_YUV[pix-img.width];
+						D = result_YUV[pix-img.width + 1];
 						
-						//ponemos a hop minimo al comienzo de scan line de bloque
-						//esto es bueno sobre todo en bloques lisos
+						hop0=0;
+						selected_a = 0;
+						selected_b = 0;
+						selected_c = 0;
+						selected_d = 0;
 						
-						//debo de usar un array mejor
-						//hop1=min_hop1;//NUEVO 10/09/2014
-						
-						for (int x=b.xini;x<=b.downsampled_xfin;x++)  {
-
-							pix=y*img.width+x;
-							oc=src_YUV[pix];
-
-							//prediction of signal (hop0) , based on pixel's coordinates 
-							//----------------------------------------------------------
-							
-							//inner pixels ( mostly of them. that is the reason for considering the 1st option)
-							//---------------------------------------------------------------------------------
-							 if ((y>b.yini) &&(x>b.xini) && x!=b.downsampled_xfin){
-								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-								
-								//hop0=(4*result_YUV[pix-1]+4*result_YUV[pix-img.width])/8;	
-								
-								//hop0=(241*result_YUV[pix-1]+170*result_YUV[pix+1-img.width])/411;	
-								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
-							}
-							//initial pix
-							//-----------
-							 else if (x==0 && y==0) {  
-								hop0=oc;//first pixel always is perfectly predicted! :-)  
-							}	
-							//upper side of the image. not include corner
-						    //--------------------------------------------
-							else if (y==0 && x>b.xini) {
-								hop0=result_YUV[pix-1];
-								
-							}
-							
-							//corners at upper side of image
-							//-------------------------------
-							else if (y==0 && x==b.xini) {
-								hop0=boundaries_YUV[pix-1];
-								
-								
-								last_small_hop=false;
-								hop1=start_hop1;
-								
-								
-							}
-							
-							//left side of the image. not include corner
-							//-----------------------------------------
-							else if ((x==0) && (y>b.yini)){
-								
-								hop0=result_YUV[pix-img.width];
-								//hop0=img.boundaries_YUV[0][pix-img.width];
-							
-								//esta variable puede variar es mejor no ponerla a false
-								last_small_hop=false;//31/12/2014 se descomenta
-								//last_small_hop=true;//porque no
-								//comento esto 12/09/2014
-								hop1=start_hop1;//31/12/2014 se descomenta
-							}
-							//corners of left side of the image.
-							//----------------------------------------- 
-			                else if ((x==0) && (y==b.yini)){
-								
-			                	//System.out.println("NUNCA ENTRA");
-								//hop0=result_YUV[pix-img.width];
-								hop0=img.boundaries_YUV[0][pix-img.width];
-								
-								//hop0=(3*img.boundaries_YUV[0][pix-img.width]+4*img.boundaries_YUV[0][pix-img.width+1])/7;
-								
-								
-								last_small_hop=false;
-								//last_small_hop=true;//porque no
-								
-								//comento esto 12/09/2014
-								hop1=start_hop1;
-								
-								
-								//hop0=oc;
-								
-							}
-							//left side of the block. not include corner
-							//--------------------------------------
-							else if ((x==b.xini) && (y>b.yini)){
-								//System.out.print("zulu");
-									hop0=(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7;
-									//hop0=img.boundaries_YUV[0][pix-1];
-									//hop0=(4*img.boundaries_YUV[0][pix-1]+4*result_YUV[pix+1-img.width])/8;
-									//hop0=result_YUV[pix+1-img.width];//oc;//img.boundaries_YUV[0][pix-1];
-									//System.out.println(" el boundary v tiene color:"+img.boundaries_YUV[0][pix-1]+"  at  x:"+(x-1)+" ,y:"+y);
-									//hop0=oc;
-									
-									//esto es nuevo 12/09/2014
-									last_small_hop=false;//31/12/2014 se descomenta
-									//last_small_hop=true;//porque no
-									
-									//hop1=max_hop1;
-									hop1=start_hop1;//31/12/2014 se descomenta
-									//hop0=oc;
-									
-									
-							}
-							//up-left corner of block
-							//--------------
-							else if ((x==b.xini) && (y==b.yini)){
-								//System.out.print("zulu");
-								hop0=(4*img.boundaries_YUV[0][pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;
-								
-								//esto es nuevo 12/09/2014
-								last_small_hop=false;
-								//last_small_hop=true;//porque no
-								
-								hop1=start_hop1;
-								//hop1=8;//start_hop1;
-								//hop0=255;//oc;
-								//System.out.println("hop0 es "+hop0);
-								
-								//hop0=oc;
-							}
-							
-							
-							
-							//right side of block (and right side of image. is the same case). Not includes corner
-							//-----------------------------------------------------------------------------------
-							else if ((x==b.downsampled_xfin) && (y>b.yini)) {
-								//hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;	
-								
-								//nueva formula 03/12/2015
-								hop0=(result_YUV[pix-1]+result_YUV[pix-img.width])/2;	
-								
-								
-								//hop0=(4*result_YUV[pix-1]+0*result_YUV[pix-img.width])/4;
-							}
-							
-								
-							//upper side of block. not includes right corner
-							//-----------------------------------------
-						    else if (y==b.yini && x>0 && x!=b.downsampled_xfin) {
-						    	hop0=(4*result_YUV[pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;	
-						    	//hop0=(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix+1-img.width])/6;
-						    	//hop0=(4*result_YUV[pix-1]+1*img.boundaries_YUV[0][pix+1-img.width])/5;
-						    	//hop0=result_YUV[pix-1];
-						    	
-						    	//hop0=oc;
-						    }
-							//up-right CORNER of block
-							//-----------------------------------------------------
-						    else if ((x==b.downsampled_xfin) && (y==b.yini)) {
-						    	
-						    	
-						    	
-								//hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;
-								hop0=(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix-img.width])/6;
-								
-								//aqui no se pueden usar los boundaries porque no estan escalados para este bloque
-								//hop0=(4*result_YUV[pix-1]+3*img.boundaries_YUV[0][pix-img.width+1])/7;
-								//if (result_YUV[pix-img.width]==0) System.out.println(" ey");
-							}
-						    	
-							//hop0=oc;
-							 /*
-							 if ((x==b.xini) && (y==b.yini)){
-								// hop0=oc;	 
-							 }
-							 */
-							
-							//hops computation. initial values for errors
-							emin=256;//current minimum prediction error 
-							int e2=0;//computed error for each hop 
-
-							//hop0 is prediction
-							//if (hop0>255)hop0=255;
-							//else if (hop0<0) hop0=0; 
-
-
-							// el array PCC habria que escogerlo en funcion de kini
-							
-							//if (hop0>128) hop1=(int)Math.max(hop1,(float)hop0*0.03f);
-							//if (hop0>200 && hop1<5) hop1=5;//(int)Math.max(hop1,(float)hop0*0.03f);
-							//System.out.println("hola");
-							//positive hops computation
-							//-------------------------
-							//hop1=8;
-							//rmax=40;
-							/*max_hop1=10;//4*rmax;
-							if (max_hop1>19) max_hop1=19;
-							if (max_hop1<6) max_hop1=6;
-							*/
-							
-							//29/12/2014
-							//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
-							//if (min_hop1<=2) min_hop1=2;
-							//if (hop1<min_hop1) hop1=min_hop1;
-							//max_hop1=(int)((float)min_hop1*2.5f);
-							//if (max_hop1>=20) max_hop1=19;
-							//if (hop1>max_hop1) hop1=max_hop1;
-							
-							//min_hop1=(int)(0.5f+(float)hop0*0.08f);//no puede ser cero
-							//if (min_hop1<6) min_hop1=6;
-							//if (hop1<min_hop1) hop1=min_hop1;
-							//max_hop1=12;
-							
-							if (oc-hop0>=0) 
-							{
-								for (int j=4;j<=8;j++) {
-								//for (int j=4;j<=7;j++) {
-									try{
-									e2=oc-pccr[hop1][hop0][rmax][j];
-									}catch (Exception e){
-										System.out.println("j:"+j+" hop1:"+hop1+"  hop0:"+hop0+"  x:"+x+"  y:"+y+"  b.xini:"+b.xini+" b.yini:"+b.yini+" b.downsampled_xfin:"+b.downsampled_xfin+"  up:"+result_YUV[pix-img.width]+" izq:"+result_YUV[pix-1]+ " debe ser:"+(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7+ "boundaries es:"+img.boundaries_YUV[0][pix-1]);
-										System.exit(0);
+						for (int a=0; a<max_const; a++) {
+							for (int b=0; b<max_const; b++) {
+								for (int c=0; c<max_const; c++) {
+									for (int d=0; d<max_const; d++) {
+										if (a==0 && b==0 && c==0 && d==0) continue;
+										prediction = (a*A + b*B + c*C + d*D) / (a+b+c+d); 
+										if (Math.abs(oc-prediction) < Math.abs(oc-hop0)) {
+											hop0 = prediction;
+											selected_a = a;
+											selected_b = b;
+											selected_c = c;
+											selected_d = d;
+										}
 									}
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
 								}
 							}
-							//negative hops computation
-							//-------------------------
-							else 
-							{
-								//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
-								//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
-								//
-								
-								//OPTIMIZACION
-								//creo que puedo evitar el j=4 NO, no se puede, pues el valor puede estar 
-								//mas cerca del hop nulo que del hop -1
-								for (int j=4;j>=0;j--) {
-									//for (int j=4;j>=1;j--) {
-									e2=pccr[hop1][hop0][rmax][j]-oc;
-									if (e2<0) e2=-e2;
-									if (e2<emin) {hop_number=j;emin=e2;}
-									else break;
-								}
-							}
+						}
+						
+						
+						selected_count[selected_a][selected_b][selected_c][selected_d]++;	
+					}
+					else if ((x==0) && (y>0)){
+						hop0=result_YUV[pix-img.width];									
+						last_small_hop=false;										
+						hop1=start_hop1;
+					}
+					else if ((x==img.width-1) && (y>0)) {
+						hop0=(result_YUV[pix-1]+result_YUV[pix-img.width])/2;		
+					}else if (y==0 && x>0) {
+						hop0=result_YUV[x-1];
+					}else if (x==0 && y==0) {  
+						hop0=oc;//first pixel always is perfectly predicted! :-)  
+					}		
+					
 
-							//prueba
-							if ((x==b.xini) && (y==b.yini))
-							{
-								//System.out.println(" se escoge hop ="+hop_number+ "  oc="+oc+"  hop1 es:"+hop1+ "   asigna "+pccr[hop1][hop0][rmax][hop_number]+ "rmax:"+rmax);
-								//hop0=oc;
-							}
-							//assignment of final color value
-							//--------------------------------
-							result_YUV[pix]=pccr[hop1][hop0][rmax][hop_number];
-							//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
-							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
-							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+					//hops computation. initial values for errors
+					emin=256;//current minimum prediction error 
+					int e2=0;//computed error for each hop 
+				
+					//positive hops computation
+					//-------------------------
+					int rmax=25;//40;
+					
+					if (oc-hop0>=0) 
+					{
+						for (int j=4;j<=8;j++) {
+							e2=oc-pccr[hop1][hop0][rmax][j];
+							if (e2<0) e2=-e2;
+							if (e2<emin) {hop_number=j;emin=e2;}
+							else break;
+						}
+					}
+					//negative hops computation
+					//-------------------------
+					else 
+					{
+						for (int j=4;j>=0;j--) {
+							e2=pccr[hop1][hop0][rmax][j]-oc;
+							if (e2<0) e2=-e2;
+							if (e2<emin) {hop_number=j;emin=e2;}
+							else break;
+						}
+					}
+					
+					rmax=25;
+					
+					//assignment of final color value
+					//--------------------------------
+					result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+					hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+		
+					
+					//calculo de errores medios
+					//---------------------------
+					error_center+=(oc-result_YUV[pix]);
+					error_avg+=Math.abs((oc-result_YUV[pix]));
+					
+					//tunning hop1 for the next hop
+					//-------------------------------
+					boolean small_hop=false;
+					if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+					else small_hop=false;     
+		
+					if( (small_hop) && (last_small_hop))  {
+						hop1=hop1-1;
+						if (hop1<min_hop1) hop1=min_hop1;
+					} 
+					else {
+						hop1=max_hop1;
+					}
+		
+					//lets go for the next pixel
+					//--------------------------
+					last_small_hop=small_hop;
+					pix++;            
+				}//for x
+			}//for y
+			
+			System.out.println("Selected predictions were:" );
+			
+			int total_pixels = img.width * img.height;
+			int percentage = 1;
+			
+			int min_pix = total_pixels * percentage / 100;
 
-							
-							
-							
-							//tunning hop1 for the next hop
-							//-------------------------------
-							boolean small_hop=false;
-							//if (hop_number>=6) small_hop=true;
-							//if (hop_number<=6 && hop_number>=2) small_hop=true;
-							if (hop_number<=5 && hop_number>=3) small_hop=true;
-							else small_hop=false;     
+			for (int a=0; a<max_const; a++) {
+				for (int b=0; b<max_const; b++) {
+					for (int c=0; c<max_const; c++) {
+						for (int d=0; d<max_const; d++) {
+							if (selected_count[a][b][c][d] > min_pix) System.out.println("a " + a + " b " + b + " c " + c + " d " + d + " : " + selected_count[a][b][c][d] + " times");
+						}
+					}
+				}
+			}
 
-							if( (small_hop) && (last_small_hop))  {
-								hop1=hop1-1;
-								if (hop1<min_hop1) hop1=min_hop1;
-							} 
-							else {
-								hop1=max_hop1;
-							}
-							
-							
-							//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
-
-							//lets go for the next pixel
-							//--------------------------
-							last_small_hop=small_hop;
-							
-							
-							
-							//pix++;            
-						}//for x
-						//esto es necesario al funcionar con bloques
-						//pix+=img.width-b.lx_sc+1;
-					}//for y
-
-				}//end function
+			System.out.println("quantization done");
+			
+			System.out.println("center of  error:"+error_center/(img.width*img.height));
+			System.out.println("average of  error:"+error_avg/(img.width*img.height));
+			System.out.println("----------------------------------------------------------");
+			
+		}//end function
+		
+		
+		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	public void quantizeDownsampledBlock_R(Block b, int[] hops,int[] result_YUV, int[] src_YUV,int[] boundaries_YUV)
+	{
+	
+		
+		
+		//block b contains the coordinates to set the limits of this function
+		
+		
+		//some parts of this code are identical to the function quantizeOneHopPerPixel() 
+		
+		
+		int max_hop1=8;// hop1 interval 4..8
+		int min_hop1=4;//4;//
+		
+		//queda mejor 6 que el punto medio (en peppers)
+		int start_hop1=(max_hop1+min_hop1)/2;// hop1 at begining (up-left corner) of each block
+		
+		int hop1=start_hop1;
+		
+		int hop0=0; // predicted signal
+		int emin;//error of predicted signal
+		int hop_number=4;//selected hop // 4 is NULL HOP
+		int oc=0;// original color
+		
+		
+		int rmax=20;
+		//se escoge el juego de hops segun el PR cuantizado
+		
+		if (b.PRavg==1.0) rmax=30;//bordes abruptos, iconos, ruido 
+		//else if (b.PRavg>=0.625) rmax=25;//bordes 1,1,1,0.5
+		else if (b.PRavg>=0.75) rmax=25;//bordes 1,1,1,0.5
+		else if (b.PRavg>=0.5) rmax=25;//bordes 1,1,1,0.5 NUEVO 2/01/2015
+		//else if (b.PRavg>=0.625) rmax=20;//bordes 1,1,1,0.5
+		
+		//MEJORA 28/12/2014. alteramos h1max segun la PR y ademas el menor valor es 10 y no 8
+		if (b.PRavg==1.0) {max_hop1=16;}//16;
+		else if (b.PRavg>=0.75) {max_hop1=14;}//12;
+		else if (b.PRavg>=0.5) {max_hop1=12;}
+		else if (b.PRavg>=0.25) max_hop1=10;
+		//
+		//else if (b.PRavg>=0.125) max_hop1=10;
+		else max_hop1=8;// suave
+		
+		
+		//min_hop1=4;
+		
+		//PARA HACER PRUEBAS CON LHE BASICO SE PUEDE:
+		//PONER GRID A UN SOLO BLOQUE.
+		//HACER ESTAS IGUALDADES:
+		//max_hop1=8;
+		//rmax=25; //si pongo 20, lena gana 43 db
+		
+		
+		
+		//System.out.println("PRavg:"+b.PRavg);
+		//rmax=20;//valor original
+		//max_hop1=19;
+		//start_hop1=6;
+		
+		//System.out.println(" dato:"+img.width);
+		int pix=b.yini*img.width+b.xini;//initial pixel possition        
+		
+		
+		
+		boolean last_small_hop=false;// indicates if last hop is small
+		for (int y=b.yini;y<=b.downsampled_yfin;y++)  {
+			
+			//ponemos a hop minimo al comienzo de scan line de bloque
+			//esto es bueno sobre todo en bloques lisos
+			
+			//debo de usar un array mejor
+			//hop1=min_hop1;//NUEVO 10/09/2014
+			
+			for (int x=b.xini;x<=b.downsampled_xfin;x++)  {
+	
+				pix=y*img.width+x;
+				oc=src_YUV[pix];
+	
+				//prediction of signal (hop0) , based on pixel's coordinates 
+				//----------------------------------------------------------
+				
+				//inner pixels ( mostly of them. that is the reason for considering the 1st option)
+				//---------------------------------------------------------------------------------
+				 if ((y>b.yini) &&(x>b.xini) && x!=b.downsampled_xfin){
+					hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+					
+					//hop0=(4*result_YUV[pix-1]+4*result_YUV[pix-img.width])/8;	
+					
+					//hop0=(241*result_YUV[pix-1]+170*result_YUV[pix+1-img.width])/411;	
+					//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
+				}
+				//initial pix
+				//-----------
+				 else if (x==0 && y==0) {  
+					hop0=oc;//first pixel always is perfectly predicted! :-)  
+				}	
+				//upper side of the image. not include corner
+			    //--------------------------------------------
+				else if (y==0 && x>b.xini) {
+					hop0=result_YUV[pix-1];
+					
+				}
+				
+				//corners at upper side of image
+				//-------------------------------
+				else if (y==0 && x==b.xini) {
+					hop0=boundaries_YUV[pix-1];
+					
+					
+					last_small_hop=false;
+					hop1=start_hop1;
+					
+					
+				}
+				
+				//left side of the image. not include corner
+				//-----------------------------------------
+				else if ((x==0) && (y>b.yini)){
+					
+					hop0=result_YUV[pix-img.width];
+					//hop0=img.boundaries_YUV[0][pix-img.width];
+				
+					//esta variable puede variar es mejor no ponerla a false
+					last_small_hop=false;//31/12/2014 se descomenta
+					//last_small_hop=true;//porque no
+					//comento esto 12/09/2014
+					hop1=start_hop1;//31/12/2014 se descomenta
+				}
+				//corners of left side of the image.
+				//----------------------------------------- 
+	            else if ((x==0) && (y==b.yini)){
+					
+	            	//System.out.println("NUNCA ENTRA");
+					//hop0=result_YUV[pix-img.width];
+					hop0=img.boundaries_YUV[0][pix-img.width];
+					
+					//hop0=(3*img.boundaries_YUV[0][pix-img.width]+4*img.boundaries_YUV[0][pix-img.width+1])/7;
+					
+					
+					last_small_hop=false;
+					//last_small_hop=true;//porque no
+					
+					//comento esto 12/09/2014
+					hop1=start_hop1;
+					
+					
+					//hop0=oc;
+					
+				}
+				//left side of the block. not include corner
+				//--------------------------------------
+				else if ((x==b.xini) && (y>b.yini)){
+					//System.out.print("zulu");
+						hop0=(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7;
+						//hop0=img.boundaries_YUV[0][pix-1];
+						//hop0=(4*img.boundaries_YUV[0][pix-1]+4*result_YUV[pix+1-img.width])/8;
+						//hop0=result_YUV[pix+1-img.width];//oc;//img.boundaries_YUV[0][pix-1];
+						//System.out.println(" el boundary v tiene color:"+img.boundaries_YUV[0][pix-1]+"  at  x:"+(x-1)+" ,y:"+y);
+						//hop0=oc;
+						
+						//esto es nuevo 12/09/2014
+						last_small_hop=false;//31/12/2014 se descomenta
+						//last_small_hop=true;//porque no
+						
+						//hop1=max_hop1;
+						hop1=start_hop1;//31/12/2014 se descomenta
+						//hop0=oc;
+						
+						
+				}
+				//up-left corner of block
+				//--------------
+				else if ((x==b.xini) && (y==b.yini)){
+					//System.out.print("zulu");
+					hop0=(4*img.boundaries_YUV[0][pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;
+					
+					//esto es nuevo 12/09/2014
+					last_small_hop=false;
+					//last_small_hop=true;//porque no
+					
+					hop1=start_hop1;
+					//hop1=8;//start_hop1;
+					//hop0=255;//oc;
+					//System.out.println("hop0 es "+hop0);
+					
+					//hop0=oc;
+				}
+				
+				
+				
+				//right side of block (and right side of image. is the same case). Not includes corner
+				//-----------------------------------------------------------------------------------
+				else if ((x==b.downsampled_xfin) && (y>b.yini)) {
+					//hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;	
+					
+					//nueva formula 03/12/2015
+					hop0=(result_YUV[pix-1]+result_YUV[pix-img.width])/2;	
+					
+					
+					//hop0=(4*result_YUV[pix-1]+0*result_YUV[pix-img.width])/4;
+				}
+				
+					
+				//upper side of block. not includes right corner
+				//-----------------------------------------
+			    else if (y==b.yini && x>0 && x!=b.downsampled_xfin) {
+			    	hop0=(4*result_YUV[pix-1]+3*img.boundaries_YUV[0][pix+1-img.width])/7;	
+			    	//hop0=(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix+1-img.width])/6;
+			    	//hop0=(4*result_YUV[pix-1]+1*img.boundaries_YUV[0][pix+1-img.width])/5;
+			    	//hop0=result_YUV[pix-1];
+			    	
+			    	//hop0=oc;
+			    }
+				//up-right CORNER of block
+				//-----------------------------------------------------
+			    else if ((x==b.downsampled_xfin) && (y==b.yini)) {
+			    	
+			    	
+			    	
+					//hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;
+					hop0=(4*result_YUV[pix-1]+2*img.boundaries_YUV[0][pix-img.width])/6;
+					
+					//aqui no se pueden usar los boundaries porque no estan escalados para este bloque
+					//hop0=(4*result_YUV[pix-1]+3*img.boundaries_YUV[0][pix-img.width+1])/7;
+					//if (result_YUV[pix-img.width]==0) System.out.println(" ey");
+				}
+			    	
+				//hop0=oc;
+				 /*
+				 if ((x==b.xini) && (y==b.yini)){
+					// hop0=oc;	 
+				 }
+				 */
+				
+				//hops computation. initial values for errors
+				emin=256;//current minimum prediction error 
+				int e2=0;//computed error for each hop 
+	
+				//hop0 is prediction
+				//if (hop0>255)hop0=255;
+				//else if (hop0<0) hop0=0; 
+	
+	
+				// el array PCC habria que escogerlo en funcion de kini
+				
+				//if (hop0>128) hop1=(int)Math.max(hop1,(float)hop0*0.03f);
+				//if (hop0>200 && hop1<5) hop1=5;//(int)Math.max(hop1,(float)hop0*0.03f);
+				//System.out.println("hola");
+				//positive hops computation
+				//-------------------------
+				//hop1=8;
+				//rmax=40;
+				/*max_hop1=10;//4*rmax;
+				if (max_hop1>19) max_hop1=19;
+				if (max_hop1<6) max_hop1=6;
+				*/
+				
+				//29/12/2014
+				//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
+				//if (min_hop1<=2) min_hop1=2;
+				//if (hop1<min_hop1) hop1=min_hop1;
+				//max_hop1=(int)((float)min_hop1*2.5f);
+				//if (max_hop1>=20) max_hop1=19;
+				//if (hop1>max_hop1) hop1=max_hop1;
+				
+				//min_hop1=(int)(0.5f+(float)hop0*0.08f);//no puede ser cero
+				//if (min_hop1<6) min_hop1=6;
+				//if (hop1<min_hop1) hop1=min_hop1;
+				//max_hop1=12;
+				
+				if (oc-hop0>=0) 
+				{
+					for (int j=4;j<=8;j++) {
+					//for (int j=4;j<=7;j++) {
+						try{
+						e2=oc-pccr[hop1][hop0][rmax][j];
+						}catch (Exception e){
+							System.out.println("j:"+j+" hop1:"+hop1+"  hop0:"+hop0+"  x:"+x+"  y:"+y+"  b.xini:"+b.xini+" b.yini:"+b.yini+" b.downsampled_xfin:"+b.downsampled_xfin+"  up:"+result_YUV[pix-img.width]+" izq:"+result_YUV[pix-1]+ " debe ser:"+(4*img.boundaries_YUV[0][pix-1]+3*result_YUV[pix+1-img.width])/7+ "boundaries es:"+img.boundaries_YUV[0][pix-1]);
+							System.exit(0);
+						}
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				//negative hops computation
+				//-------------------------
+				else 
+				{
+					//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
+					//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
+					//
+					
+					//OPTIMIZACION
+					//creo que puedo evitar el j=4 NO, no se puede, pues el valor puede estar 
+					//mas cerca del hop nulo que del hop -1
+					for (int j=4;j>=0;j--) {
+						//for (int j=4;j>=1;j--) {
+						e2=pccr[hop1][hop0][rmax][j]-oc;
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+	
+				//prueba
+				if ((x==b.xini) && (y==b.yini))
+				{
+					//System.out.println(" se escoge hop ="+hop_number+ "  oc="+oc+"  hop1 es:"+hop1+ "   asigna "+pccr[hop1][hop0][rmax][hop_number]+ "rmax:"+rmax);
+					//hop0=oc;
+				}
+				//assignment of final color value
+				//--------------------------------
+				result_YUV[pix]=pccr[hop1][hop0][rmax][hop_number];
+				//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
+				//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
+				hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+	
+				
+				
+				
+				//tunning hop1 for the next hop
+				//-------------------------------
+				boolean small_hop=false;
+				//if (hop_number>=6) small_hop=true;
+				//if (hop_number<=6 && hop_number>=2) small_hop=true;
+				if (hop_number<=5 && hop_number>=3) small_hop=true;
+				else small_hop=false;     
+	
+				if( (small_hop) && (last_small_hop))  {
+					hop1=hop1-1;
+					if (hop1<min_hop1) hop1=min_hop1;
+				} 
+				else {
+					hop1=max_hop1;
+				}
+				
+				
+				//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
+	
+				//lets go for the next pixel
+				//--------------------------
+				last_small_hop=small_hop;
+				
+				
+				
+				//pix++;            
+			}//for x
+			//esto es necesario al funcionar con bloques
+			//pix+=img.width-b.lx_sc+1;
+		}//for y
+	
+	}//end function
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 public void quantizeDownsampledBlock_R_experimento(Block b, int[] hops,int[] result_YUV, int[] src_YUV,int[] boundaries_YUV)
