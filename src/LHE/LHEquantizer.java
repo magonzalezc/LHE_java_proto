@@ -1389,6 +1389,7 @@ System.exit(0);
 							if ((y>0) &&(x>0) && x!=img.width-1){
 								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
 
+								//hop0=result_YUV[pix+1-img.width];
 								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
 							}
 							else if ((x==0) && (y>0)){
@@ -5097,7 +5098,7 @@ public void quantizeOneHopPerPixel_R_LHE2(int[] hops,int[] result_YUV)
 	
 }//end function
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
+public void quantizeOneHopPerPixel_LHE2_experimento10(int[] hops,int[] result_YUV)
 {
 	
 	//OJO ESTA FUNCION AL SALTAR DE MUESTRA EN MUESTRA, PARA NO DEJAR EL ARRAY DE HOPS SIN RELLENAR
@@ -5342,6 +5343,521 @@ public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
 	System.out.println("quantization done");
 	System.out.println("-------------------------");
 	System.out.println("   samples totales="+totales);
+	System.out.println("-------------------------");
+	
+}//end function
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+public void quantizeOneHopPerPixel_LHE2_experimento20(int[] hops,int[] result_YUV)
+{
+	
+	//OJO ESTA FUNCION AL SALTAR DE MUESTRA EN MUESTRA, PARA NO DEJAR EL ARRAY DE HOPS SIN RELLENAR
+	//LO RELLENA y ENTONCES los BPP no se calculan bien, PUES LUEGO EL PROCESO HUFFMAN RECORRE LOS HOPS
+	//Y PARA QUE NO ENCUENTRE HOPS NULOS LO HE RELLENADO pERO ES EXPERIMENTAL, POCO A POCO
+	
+	System.out.println("quantizying LHE2...");
+	/*
+	int iterations=1000;
+	long start_time = System.currentTimeMillis();
+	for (int xy=0;xy<iterations;xy++){
+		*/
+	
+	int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+	int min_hop1=4;//4;// 
+	int start_hop1=(max_hop1+min_hop1)/2;
+	
+	
+	int hop1=start_hop1;//max_hop1;
+	int hop0=0; // predicted signal
+	int emin;//error of predicted signal
+	int hop_number=4;//selected hop // 4 is NULL HOP
+	int oc=0;// original color
+	int pix=0;//pixel possition, from 0 to image size        
+	boolean last_small_hop=false;// indicates if last hop is small
+
+	int totales=0;
+	int pixant=0;
+	int stepant=1;
+	int step=1;
+	
+	boolean rectificando=false;
+	int step_countdown=1; //contador de pixeles dentro de un pixel que mide step
+	int back_counter=0;//cuantas veces se corrige
+	boolean back_flag=false;//ultima muestra hicimos back
+	
+	int[] steparray=new int [512*512];
+	
+	for (int y=0;y<img.height;y++)  {
+		for (int x=0;x<img.width;){
+				//x++)  { // he quitado el x++ porque ahora salta de step en step, siendo step variable
+
+			oc=img.YUV[0][pix];
+
+			//prediction of signal (hop0) , based on pixel's coordinates 
+			//----------------------------------------------------------
+			if ((y>0) &&(x>0) && x!=img.width-1){
+				hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+			}
+			else if ((x==0) && (y>0)){
+				hop0=result_YUV[pix-img.width];
+				last_small_hop=false;
+				hop1=start_hop1;
+			}
+			else if ((x==img.width-1) && (y>0)) {
+				hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;				
+			}else if (y==0 && x>0) {
+				hop0=result_YUV[x-1];
+			}else if (x==0 && y==0) {  
+				hop0=oc;//first pixel always is perfectly predicted! :-)  
+			}			
+
+			
+
+			//hops computation. initial values for errors
+			emin=256;//current minimum prediction error 
+			int e2=0;//computed error for each hop 
+
+			//positive hops computation
+			//-------------------------
+			int rmax=25;//40; razon geometrica
+			
+			if (oc-hop0>=0) 
+			{
+				for (int j=4;j<=8;j++) {
+			
+					e2=oc-pccr[hop1][hop0][rmax][j];
+					if (e2<0) e2=-e2;
+					if (e2<emin) {hop_number=j;emin=e2;}
+					else break;
+				}
+			}
+			//negative hops computation
+			//-------------------------
+			else 
+			{
+			
+				for (int j=4;j>=0;j--) {
+				
+					e2=pccr[hop1][hop0][rmax][j]-oc;
+					if (e2<0) e2=-e2;
+					if (e2<emin) {hop_number=j;emin=e2;}
+					else break;
+				}
+			}
+
+			//29/12/2014
+			
+			
+			//colin . esto es para recolocar el valor de luminancia en el centro del intervalo
+			//asimetrico. En realidad puede estar integrado en cache 
+			
+			rmax=25;
+			int hop0i=pccr[hop1][hop0][rmax][4];
+			int[] colin= new int[9];
+			colin[4]=hop0i;//pccr[hop1][hop0i][rmax][4];// 
+			colin[8]=pccr[hop1][hop0i][rmax][8];;//AJUSTE. no puedo considerar el 255 pq puede estar muy lejos
+			colin[0]=pccr[hop1][hop0i][rmax][0];//AJUSTE no puedo considerar el 0 pq puede estar muy lejos
+			colin[3]=pccr[hop1][hop0i][rmax][3];
+			colin[5]=pccr[hop1][hop0i][rmax][5];
+		
+		
+			
+			//assignment of final color value
+			//--------------------------------
+			result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+			
+			hops[pix]=hop_number; 
+
+			//tunning hop1 for the next hop
+			//-------------------------------
+			boolean small_hop=false;
+			int hop1_prev=hop1;
+			if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+			else small_hop=false;     
+
+			
+			if( (small_hop) && (last_small_hop))  {
+				
+				
+				
+				//hop1=hop1-1;
+				//hop1=hop1-1;//step;
+			    hop1=hop1-stepant;
+				//hop1=hop1-step;
+				if (hop1<min_hop1) hop1=min_hop1;
+				
+				
+			} 
+			else {
+				hop1=max_hop1;
+			}
+			
+			//hop1=min_hop1;
+			
+					
+			//step_countdown-=1;
+			
+			
+			
+			  stepant=step;			  
+			  if (hop1==4) step =4;
+			  else if (hop1==5) step =3;
+			  else if (hop1==6) step =2;
+			  else if (hop1>=7) step =1;
+			  
+			  if (stepant>step && step==1)
+		      {//begin logica back
+			    x=x-stepant+1;
+			    pixant=pix-stepant;
+			    pix=pix-stepant+1;			    
+			    back_counter++;
+			    step=1;
+			    stepant=1;
+			    continue;
+		      }//end logica back
+			 
+			
+			//System.out.println("step:"+step+ "    x:"+x);		
+			if (x+step> img.width-1) {step=img.width -x-1;}
+			//if (x+step> img.width-1) {step=1;step_countdown=1;}
+			
+			//if (step==0) {System.out.println ("ey");x=img.width+1;continue;}
+			
+			
+					
+			
+			//lo que sigue lo hago si step_countdown==step)
+			//if (step_countdown==step)//primer pixel del intervalo cubierto por la muestra
+			{	
+			float alfa=0;	
+			//propago el pixel actual para poder hacer la siguiente prediccion.
+			//ojo, la siguiente, que aun no estamos en pix+step. esto es "adelantarnos"
+			//se puede programar mucho mejor y optimizar pero esto es una prueba de concepto
+			for (int i2=pix+1; i2<=pix+step;i2++)
+				{
+				
+				result_YUV[i2]=result_YUV[i2-1];
+				//hops[i2]=0;//hops[i2-1];//habria que eliminarlo. no hay hops no los va a haber en estos pixels
+				
+				
+				//new
+				//steparray[i2]=step;
+				}
+		
+		
+			//si hay mas de un pixel entre el pix anterior y este podemos optar por
+			//una interpolacion lineal o bien no hacer nada y es como dejarlo en vecino cercano
+			//pues la propagacion ya hace de vecino
+			if ( pix-pixant>1)
+			{
+			alfa=(result_YUV[pix]-result_YUV[pixant])/(pix-pixant);
+			if (pix % 512 ==0) alfa=0; //esto es lo mismo que decir si x llega al final de la scanline 
+			
+			
+			 for (int i2=pixant+1; i2<pix;i2++)
+			
+				{
+				//si descomento, paso a bilineal
+				 result_YUV[i2]=(int)(result_YUV[i2-1]+ alfa);
+				}
+			
+			//
+				
+			}
+			
+			
+			totales++;
+			pixant=pix;
+			}//step_countdown
+			
+			if (step==0) step=1;//solo ocurre al final de la scanline
+			
+			x+=step;//step;//1;//step;//+1;
+			
+			//totales++;
+			//pixant=pix;
+			
+			//System.out.println("step"+step+"  x:"+x);
+			//lets go for the next pixel
+			//--------------------------
+			last_small_hop=small_hop;
+			//pix++;
+			pix+=step;//step;//1;//step;//+1;//step
+			
+		}//for x
+	}//for y
+	
+	/*
+	}//iterations
+	
+	long end_time = System.currentTimeMillis();
+	double total_time=end_time-start_time;
+	double tpp=total_time/(img.width*img.height*iterations);
+	double tpi=total_time/(iterations);
+	System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
+	*/
+	System.out.println("quantization done");
+	System.out.println("-------------------------");
+	System.out.println("   samples totales="+totales);
+	System.out.println("   back_counter="+back_counter);
+	System.out.println("-------------------------");
+	
+}//end function
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+public void quantizeOneHopPerPixel_LHE2(int[] hops,int[] result_YUV)
+{
+	
+	//OJO ESTA FUNCION AL SALTAR DE MUESTRA EN MUESTRA, PARA NO DEJAR EL ARRAY DE HOPS SIN RELLENAR
+	//LO RELLENA y ENTONCES los BPP no se calculan bien, PUES LUEGO EL PROCESO HUFFMAN RECORRE LOS HOPS
+	//Y PARA QUE NO ENCUENTRE HOPS NULOS LO HE RELLENADO pERO ES EXPERIMENTAL, POCO A POCO
+	
+	System.out.println("quantizying LHE2...");
+	/*
+	int iterations=1000;
+	long start_time = System.currentTimeMillis();
+	for (int xy=0;xy<iterations;xy++){
+		*/
+	
+	int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+	int min_hop1=4;//4;// 
+	int start_hop1=(max_hop1+min_hop1)/2;
+	
+	
+	int hop1=start_hop1;//max_hop1;
+	int hop0=0; // predicted signal
+	int emin;//error of predicted signal
+	int hop_number=4;//selected hop // 4 is NULL HOP
+	int oc=0;// original color
+	int pix=0;//pixel possition, from 0 to image size        
+	boolean last_small_hop=false;// indicates if last hop is small
+
+	int totales=0;
+	int pixant=0;
+	int stepant=1;
+	int step=1;
+	
+	boolean rectificando=false;
+	int step_countdown=1; //contador de pixeles dentro de un pixel que mide step
+	int back_counter=0;//cuantas veces se corrige
+	boolean back_flag=false;//ultima muestra hicimos back
+	
+	int[] steparray=new int [512*512];
+	
+	for (int y=0;y<img.height;y++)  {
+		for (int x=0;x<img.width;){
+				//x++)  { // he quitado el x++ porque ahora salta de step en step, siendo step variable
+
+			oc=img.YUV[0][pix];
+
+			//prediction of signal (hop0) , based on pixel's coordinates 
+			//----------------------------------------------------------
+			if ((y>0) &&(x>0) && x!=img.width-1){
+				hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+			}
+			else if ((x==0) && (y>0)){
+				hop0=result_YUV[pix-img.width];
+				last_small_hop=false;
+				hop1=start_hop1;
+			}
+			else if ((x==img.width-1) && (y>0)) {
+				hop0=(4*result_YUV[pix-1]+2*result_YUV[pix-img.width])/6;				
+			}else if (y==0 && x>0) {
+				hop0=result_YUV[x-1];
+			}else if (x==0 && y==0) {  
+				hop0=oc;//first pixel always is perfectly predicted! :-)  
+			}			
+
+			
+
+			//hops computation. initial values for errors
+			emin=256;//current minimum prediction error 
+			int e2=0;//computed error for each hop 
+
+			//positive hops computation
+			//-------------------------
+			int rmax=25;//40; razon geometrica
+			
+			if (oc-hop0>=0) 
+			{
+				for (int j=4;j<=8;j++) {
+			
+					e2=oc-pccr[hop1][hop0][rmax][j];
+					if (e2<0) e2=-e2;
+					if (e2<emin) {hop_number=j;emin=e2;}
+					else break;
+				}
+			}
+			//negative hops computation
+			//-------------------------
+			else 
+			{
+			
+				for (int j=4;j>=0;j--) {
+				
+					e2=pccr[hop1][hop0][rmax][j]-oc;
+					if (e2<0) e2=-e2;
+					if (e2<emin) {hop_number=j;emin=e2;}
+					else break;
+				}
+			}
+
+			//29/12/2014
+			
+			
+			//colin . esto es para recolocar el valor de luminancia en el centro del intervalo
+			//asimetrico. En realidad puede estar integrado en cache 
+			
+			rmax=25;
+			int hop0i=pccr[hop1][hop0][rmax][4];
+			int[] colin= new int[9];
+			colin[4]=hop0i;//pccr[hop1][hop0i][rmax][4];// 
+			colin[8]=pccr[hop1][hop0i][rmax][8];;//AJUSTE. no puedo considerar el 255 pq puede estar muy lejos
+			colin[0]=pccr[hop1][hop0i][rmax][0];//AJUSTE no puedo considerar el 0 pq puede estar muy lejos
+			colin[3]=pccr[hop1][hop0i][rmax][3];
+			colin[5]=pccr[hop1][hop0i][rmax][5];
+		
+		
+			
+			//assignment of final color value
+			//--------------------------------
+			result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+			
+			hops[pix]=hop_number; 
+
+			//tunning hop1 for the next hop
+			//-------------------------------
+			boolean small_hop=false;
+			int hop1_prev=hop1;
+			if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+			else small_hop=false;     
+
+			
+			if( (small_hop) && (last_small_hop))  {
+				
+				
+				
+				//hop1=hop1-1;
+				//hop1=hop1-1;//step;
+			    hop1=hop1-stepant;
+				//hop1=hop1-step;
+				if (hop1<min_hop1) hop1=min_hop1;
+				
+				
+			} 
+			else {
+				hop1=max_hop1;
+			}
+			
+			//hop1=min_hop1;
+			
+					
+			//step_countdown-=1;
+			
+			
+			
+			  stepant=step;			  
+			  if (hop1==4) step =6;
+			  else if (hop1==5) step =4;
+			  else if (hop1==6) step =2;
+			  else if (hop1>=7) step =1;
+			  
+			  if (stepant>step && step==1)
+		      {//begin logica back
+			    x=x-stepant+1;
+			    pixant=pix-stepant;
+			    pix=pix-stepant+1;			    
+			    back_counter++;
+			    step=1;
+			    stepant=1;
+			    continue;
+		      }//end logica back
+			 
+			
+			//System.out.println("step:"+step+ "    x:"+x);		
+			if (x+step> img.width-1) {step=img.width -x-1;}
+			//if (x+step> img.width-1) {step=1;step_countdown=1;}
+			
+			//if (step==0) {System.out.println ("ey");x=img.width+1;continue;}
+			
+			
+					
+			
+			//lo que sigue lo hago si step_countdown==step)
+			//if (step_countdown==step)//primer pixel del intervalo cubierto por la muestra
+			{	
+			float alfa=0;	
+			//propago el pixel actual para poder hacer la siguiente prediccion.
+			//ojo, la siguiente, que aun no estamos en pix+step. esto es "adelantarnos"
+			//se puede programar mucho mejor y optimizar pero esto es una prueba de concepto
+			for (int i2=pix+1; i2<=pix+step;i2++)
+				{
+				
+				result_YUV[i2]=result_YUV[i2-1];
+				//hops[i2]=0;//hops[i2-1];//habria que eliminarlo. no hay hops no los va a haber en estos pixels
+				
+				
+				//new
+				//steparray[i2]=step;
+				}
+		
+		
+			//si hay mas de un pixel entre el pix anterior y este podemos optar por
+			//una interpolacion lineal o bien no hacer nada y es como dejarlo en vecino cercano
+			//pues la propagacion ya hace de vecino
+			if ( pix-pixant>1)
+			{
+			alfa=(result_YUV[pix]-result_YUV[pixant])/(pix-pixant);
+			if (pix % 512 ==0) alfa=0; //esto es lo mismo que decir si x llega al final de la scanline 
+			
+			
+			 for (int i2=pixant+1; i2<pix;i2++)
+			
+				{
+				//si descomento, paso a bilineal
+				 result_YUV[i2]=(int)(result_YUV[i2-1]+ alfa);
+				}
+			
+			//
+				
+			}
+			
+			
+			totales++;
+			pixant=pix;
+			}//step_countdown
+			
+			if (step==0) step=1;//solo ocurre al final de la scanline
+			
+			x+=step;//step;//1;//step;//+1;
+			
+			//totales++;
+			//pixant=pix;
+			
+			//System.out.println("step"+step+"  x:"+x);
+			//lets go for the next pixel
+			//--------------------------
+			last_small_hop=small_hop;
+			//pix++;
+			pix+=step;//step;//1;//step;//+1;//step
+			
+		}//for x
+	}//for y
+	
+	/*
+	}//iterations
+	
+	long end_time = System.currentTimeMillis();
+	double total_time=end_time-start_time;
+	double tpp=total_time/(img.width*img.height*iterations);
+	double tpi=total_time/(iterations);
+	System.out.println("tiempo_total:"+total_time+"  tpp:"+tpp+" ms"+ " tpi:"+tpi +" ms");
+	*/
+	System.out.println("quantization done");
+	System.out.println("-------------------------");
+	System.out.println("   samples totales="+totales);
+	System.out.println("   back_counter="+back_counter);
 	System.out.println("-------------------------");
 	
 }//end function
