@@ -2408,31 +2408,31 @@ System.exit(0);
 		final int PRINT_COUNT_ARRAY=2;
 		int A,B,C,D;
 		
-		int mode = PRINT_PREDICTION_ARRAY; //0=print the array. 1=use the array printed
+		int mode = PRINT_COUNT_ARRAY; //0=print the array. 1=use the array printed
 		
-		int size_prediction = 4;
+		int size_prediction = 3;
 		int []p = new int[size_prediction];
 		int count[] = new int[size_prediction];
 		int selected;
 		int size_luminance = 128;
 		//int [][][][] prediction = new int [size_luminance][size_luminance][size_luminance][size_luminance];
-		int [][][][][] prediction_count = new int [size_luminance][size_luminance][size_luminance][size_luminance][size_prediction];
+		int [][][][] prediction_count = new int [size_luminance][size_luminance][size_luminance][size_prediction];
 
 		//init prediction array
 		if (mode == USE_ARRAY) {
 			//Copiar el array a usar aquí
 		}else  {
 			for (int a=0; a<size_luminance; a++) {
-				for (int b=0; b<size_luminance; b++) {
+				//for (int b=0; b<size_luminance; b++) {
 					for (int c=0; c<size_luminance; c++) {
 						for (int d=0; d<size_luminance; d++) {
 							//prediction[a][b][c][d] = -1;
 							for (int s=0; s<size_prediction; s++) {
-								prediction_count[a][b][c][d][s]= 0;
+								prediction_count[a][c][d][s]= 0;
 							}
 						}
 					}
-				}
+				//}
 			}
 		}
 		
@@ -2451,8 +2451,8 @@ System.exit(0);
 					
 					p[0] = D;
 					p[1] = C;
-					p[2] = B;
-					p[3] = A;
+					p[2] = A;
+					//p[3] = B;
 					
 					selected = 0;
 					hop0=D;
@@ -2469,8 +2469,8 @@ System.exit(0);
 					}
 					
 					count[selected]++;
-					prediction_count[A/2][B/2][C/2][D/2][selected]++;
-					//prediction[A/2][B/2][C/2][D/2] = selected;
+					prediction_count[A/2][C/2][C/2][selected]++;
+
 				}
 				else if ((x==0) && (y>0)){
 					hop0=result_YUV[pix-img.width];									
@@ -2576,15 +2576,19 @@ System.exit(0);
 		
 		if (mode == PRINT_COUNT_ARRAY) {
 			for (int a=0; a<size_luminance; a++) {
-				for (int b=0; b<size_luminance; b++) {
+				//for (int b=0; b<size_luminance; b++) {
 					for (int c=0; c<size_luminance; c++) {
 						for (int d=0; d<size_luminance; d++) {
 							for (int s=0; s<size_prediction; s++) {
-								if (prediction_count[a][b][c][d][s]>min_pix) System.out.println("prediction[" + a + "][" + b + "][" + c + "][" + d + "]" + "[" + s + "]=" + prediction_count[a][b][c][d][s] + ";");
+								if (prediction_count[a][c][d][s]>0)System.out.println("prediction[" + a + "][" + c + "][" + d + "][" + s + "]=" + prediction_count[a][c][d][s] + ";");
+								//System.out.println("prediction1[" + a + "][" + b + "][" + c + "][" + d + "]=" + prediction_count_1[a][b][c][d] + ";");
+								//System.out.println("prediction2[" + a + "][" + b + "][" + c + "][" + d + "]=" + prediction_count_2[a][b][c][d] + ";");
+								//System.out.println("prediction3[" + a + "][" + b + "][" + c + "][" + d + "]=" + prediction_count_3[a][b][c][d] + ";");
+
 							}
 						}
 					}
-				}
+				//}
 			}
 		}
 		
