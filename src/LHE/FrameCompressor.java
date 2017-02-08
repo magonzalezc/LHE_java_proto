@@ -125,8 +125,11 @@ public float[] compressBasicFrame()
 	//lhe.quantizeOneHopPerPixel(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_adaptative(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_adaptativeFuerzabruta(img.hops[0],img.LHE_YUV[0]);
-	//lhe.quantizeOneHopPerPixel_adaptativeExperiments(img.hops[0],img.LHE_YUV[0]);
-	lhe.quantizeOneHopPerPixel_adaptativeTest(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_adaptativeExperimentsHops(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_adaptativeTest_v0(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_adaptativeTest_v1(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_adaptativeExperimentsLuminance(img.hops[0],img.LHE_YUV[0]);
+
 
 	//lhe.quantizeOneHopPerPixel_withdelta(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
