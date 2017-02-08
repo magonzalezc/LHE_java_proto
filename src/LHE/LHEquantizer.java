@@ -1758,6 +1758,191 @@ System.exit(0);
 	 * @param hops
 	 * @param result_YUV
 	 */
+	public void quantizeOneHopPerPixel_borderPredictor(int[] hops,int[] result_YUV)
+	{
+		System.out.println("quantizying...");
+		
+		int A,B,C,D;
+
+		int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
+		int min_hop1=4;//4;// 
+		int start_hop1=(max_hop1+min_hop1)/2;
+		
+		
+		int hop1=start_hop1;//max_hop1;
+		int hop0=0; // predicted signal
+		int emin;//error of predicted signal
+		int hop_number=4;//selected hop // 4 is NULL HOP
+		int oc=0;// original color
+		int pix=0;//pixel possition, from 0 to image size        
+		boolean last_small_hop=false;// indicates if last hop is small
+	
+		
+		float error_center=0;
+		float error_avg=0;
+		
+		int size = 5;
+		int []p = new int[size];
+		int count[] = new int[size];
+		int selected;
+		int first_prediction;
+		int pa;
+		int pb;
+		int pc;
+		int pd;
+		
+		for (int y=0;y<img.height;y++)  {
+			for (int x=0;x<img.width;x++)  {
+	
+				oc=img.YUV[0][pix];
+
+				//prediction of signal (hop0) , based on pixel's coordinates 
+				//----------------------------------------------------------
+				if ((y>0) &&(x>0) && x!=img.width-1){
+					
+					A = result_YUV[pix-1];
+					B = result_YUV[pix-img.width-1];
+					C = result_YUV[pix-img.width];
+					D = result_YUV[pix-img.width + 1];					
+					
+					p[0] = D;
+					p[1] = C;
+					p[2] = B;
+					p[3] = A;
+					p[4] = (4*A + 3*D)/7;
+					
+					first_prediction = (4*A + 3*D)/7;
+					pa = Math.abs(first_prediction - A);
+					pb = Math.abs(first_prediction - B);
+					pc = Math.abs(first_prediction - C);
+					pd = Math.abs(first_prediction - D);
+
+					
+					if (pa<=pb && pa <= pc && pa<=pd) {
+						hop0 = A;
+					} else if (pb<=pc && pb<=pd) {
+						hop0 = B;
+					} else if (pc<=pd){
+						hop0 = C;
+					} else  {
+						hop0 = D;
+					}
+				}
+				else if ((x==0) && (y>0)){
+					hop0=result_YUV[pix-img.width];									
+					last_small_hop=false;										
+					hop1=start_hop1;
+				}
+				else if ((x==img.width-1) && (y>0)) {
+					hop0=(result_YUV[pix-1]+result_YUV[pix-img.width])/2;		
+				}else if (y==0 && x>0) {
+					hop0=result_YUV[x-1];
+				}else if (x==0 && y==0) {  
+					hop0=oc;//first pixel always is perfectly predicted! :-)  
+				}		
+				
+
+				//hops computation. initial values for errors
+				emin=256;//current minimum prediction error 
+				int e2=0;//computed error for each hop 
+			
+				//positive hops computation
+				//-------------------------
+				int rmax=25;//40;
+				
+				if (oc-hop0>=0) 
+				{
+					for (int j=4;j<=8;j++) {
+						e2=oc-pccr[hop1][hop0][rmax][j];
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				//negative hops computation
+				//-------------------------
+				else 
+				{
+					for (int j=4;j>=0;j--) {
+						e2=pccr[hop1][hop0][rmax][j]-oc;
+						if (e2<0) e2=-e2;
+						if (e2<emin) {hop_number=j;emin=e2;}
+						else break;
+					}
+				}
+				
+				rmax=25;
+				
+				//assignment of final color value
+				//--------------------------------
+				result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+				hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
+	
+				
+				//calculo de errores medios
+				//---------------------------
+				error_center+=(oc-result_YUV[pix]);
+				error_avg+=Math.abs((oc-result_YUV[pix]));
+				
+				//tunning hop1 for the next hop
+				//-------------------------------
+				boolean small_hop=false;
+				if (hop_number<=5 && hop_number>=3) small_hop=true;// 4 is in the center, 4 is null hop
+				else small_hop=false;     
+	
+				if( (small_hop) && (last_small_hop))  {
+					hop1=hop1-1;
+					if (hop1<min_hop1) hop1=min_hop1;
+				} 
+				else {
+					hop1=max_hop1;
+				}
+	
+				//lets go for the next pixel
+				//--------------------------
+				last_small_hop=small_hop;
+				pix++;            
+			}//for x
+		}//for y
+		
+		System.out.println("Selected predictions were:" );
+		
+		for (int i=0; i<p.length; i++) {
+			System.out.println("prediction " + i + ": " + count[i] + " times");
+		}
+		
+		System.out.println("quantization done");
+		
+		System.out.println("center of  error:"+error_center/(img.width*img.height));
+		System.out.println("average of  error:"+error_avg/(img.width*img.height));
+		System.out.println("----------------------------------------------------------");
+		
+	}//end function
+	
+	
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	/**
+	 * This is a very fast LHE quantization function, used for initial quantization in order to 
+	 * perform Perceptual Relevance Metrics.
+	 * Later quantization over downwsampled image allows more tunning ( k value) and therefore 
+	 * require more complex calculation (but over a reduced image)
+	 * 
+	 * image luminance array is the input for this function. 
+	 *   This luminance array is suposed to be stored at img.YUV[0][pix]; 
+	 *   Image luminance array is not modified
+	 * 
+	 * hops numbering:
+	 *   >negative hops: 0,1,2,3
+	 *   >null hop: 4
+	 *   >positive hops: 5,6,7,8
+	 * 
+	 * result_YUV is output array. it can not be removed, because these luminance & chroma values are part of
+	 *   algorithm to choose next hop
+	 * 
+	 * 
+	 * @param hops
+	 * @param result_YUV
+	 */
 	public void quantizeOneHopPerPixel_adaptative(int[] hops,int[] result_YUV)
 	{
 		System.out.println("quantizying...");
