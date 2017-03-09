@@ -6223,8 +6223,8 @@ public void quantizeOneHopPerPixel_LHE30(int[] hops,int[] result_YUV)
 			
 			
 			// correccion
-			int mini=2;
-			int maxi=6;
+			int mini=3;
+			int maxi=5;
 					    if (y%2==1 && x>1)
 						//if (y>1 && x<511 && x>1)	
 						{
@@ -6232,7 +6232,7 @@ public void quantizeOneHopPerPixel_LHE30(int[] hops,int[] result_YUV)
 							   
 					    	//if (hops[pix-1]==4)
 							{
-								hop_number=4;
+								hop_number=4;//hops[pix-img.width];//mg.width];//4;
 								counter_resta+=1;
 							}
 						}
