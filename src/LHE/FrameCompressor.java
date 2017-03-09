@@ -152,6 +152,7 @@ public float[] compressBasicFrame(String optionratio)
 	int total_bits=0;//total bits taken by the image
 	
 	//save hops
+	//en modo BASIC el debug se pone a true siempre desde MainTest, asi vemos los hops en un fichero
 	if (DEBUG) img.saveHopsToTxt("./output_debug/hops1stLHE_signed.txt",true);
 	if (DEBUG) img.saveHopsToTxt("./output_debug/hops1stLHE_unsigned.txt",false);
 	
@@ -191,8 +192,8 @@ public float[] compressLHE2()
 	System.out.println(" result image is ./output_img/LHE2_YUV.bmp");
 	
 	
-	lhe.quantizeOneHopPerPixel_LHE2(img.hops[0],img.LHE_YUV[0]);
-	
+	//lhe.quantizeOneHopPerPixel_LHE2(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_LHE30(img.hops[0],img.LHE_YUV[0]);
 	
 	
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
