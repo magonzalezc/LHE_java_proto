@@ -193,8 +193,11 @@ public float[] compressLHE2()
 	
 	
 	//lhe.quantizeOneHopPerPixel_LHE2(img.hops[0],img.LHE_YUV[0]);
-	lhe.quantizeOneHopPerPixel_LHE30(img.hops[0],img.LHE_YUV[0]);
-	
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento10(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento20(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento30(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_LHE2_experimento31(img.hops[0],img.LHE_YUV[0]);
+	img.YUVtoBMP("./output_debug/LHE2_removed.bmp",img.LHE2_removed_pix);
 	
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
 	//PRblock.img=img;
@@ -235,6 +238,11 @@ public float[] compressLHE2()
 	
 	System.out.println("total_hops: "+be.totalhops);
 	System.out.println("image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
+	
+	System.out.println("lhe2 bits ahorrados:"+lhe.LHE2_resta);
+	lenbin=lenbin-lhe.LHE2_resta;
+	System.out.println("LHE2 image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
+	
 	
 	result[1]=(float)lenbin/(img.width*img.height);
 	
