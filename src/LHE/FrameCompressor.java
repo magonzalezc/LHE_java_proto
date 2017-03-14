@@ -196,7 +196,10 @@ public float[] compressLHE2()
 	//lhe.quantizeOneHopPerPixel_LHE2_experimento10(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_LHE2_experimento20(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_LHE2_experimento30(img.hops[0],img.LHE_YUV[0]);
-	lhe.quantizeOneHopPerPixel_LHE2_experimento31(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento31(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_LHE2_experimento33(img.hops[0],img.LHE_YUV[0]);// bueno
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento35(img.hops[0],img.LHE_YUV[0]);
+	
 	img.YUVtoBMP("./output_debug/LHE2_removed.bmp",img.LHE2_removed_pix);
 	
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
