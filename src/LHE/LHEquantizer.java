@@ -1365,8 +1365,8 @@ System.exit(0);
 					//img.height=429;
 					//img.width=576;
 					//img.height=256;
-					int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
-					int min_hop1=4;//4;// 
+					int max_hop1=10;//10;//8;//8;//16;//8;// hop1 interval 4..8
+					int min_hop1=6;//4;//4;// 
 					int start_hop1=(max_hop1+min_hop1)/2;
 					
 					
@@ -1391,7 +1391,7 @@ System.exit(0);
 							//----------------------------------------------------------
 							if ((y>0) &&(x>0) && x!=img.width-1){
 								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-
+								//hop0=(result_YUV[pix-1]+result_YUV[pix+1-img.width])/2;
 								//hop0=result_YUV[pix+1-img.width];
 								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
 							}
@@ -1453,6 +1453,7 @@ System.exit(0);
 							//positive hops computation
 							//-------------------------
 							int rmax=25;//40;
+							rmax=30;
 							//hop1=8;
 							
 							//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
@@ -1472,7 +1473,8 @@ System.exit(0);
 									e2=oc-pccr[hop1][hop0][rmax][j];
 									if (e2<0) e2=-e2;
 									if (e2<emin) {hop_number=j;emin=e2;
-									              if (e2<=min_hop1) break;
+									              //if (e2<min_hop1) break;
+													if (e2<4) break;
 									              }
 									else break;
 								}
@@ -1494,7 +1496,8 @@ System.exit(0);
 									e2=pccr[hop1][hop0][rmax][j]-oc;
 									if (e2<0) e2=-e2;
 									if (e2<emin) {hop_number=j;emin=e2;
-									            if (e2<=min_hop1) break;
+									            //if (e2<min_hop1) break;
+												if (e2<4) break;
 									            }
 									else break;
 								}
@@ -1505,7 +1508,8 @@ System.exit(0);
 							
 							//colin
 							
-							rmax=25;
+							//rmax=25;
+							//rmax=24;
 							int hop0i=pccr[hop1][hop0][rmax][4];
 							int[] colin= new int[9];
 							colin[4]=hop0i;//pccr[hop1][hop0i][rmax][4];// 
@@ -1562,6 +1566,8 @@ System.exit(0);
 							else {
 								hop1=max_hop1;
 							}
+							
+							//hop1=6;
 							
 							//hop1=8;
 							//else if (hop_number>=7 || hop_number<=1){hop1=max_hop1;}
@@ -7204,6 +7210,7 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 			//positive hops computation
 			//-------------------------
 			int rmax=25;//40;
+			rmax=30;
 			//hop1=8;
 			
 			//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
@@ -7216,7 +7223,8 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 				//for (int j=4;j<=5;j++) {
 					e2=oc-pccr[hop1][hop0][rmax][j];
 					if (e2<0) e2=-e2;
-					if (e2<emin) {hop_number=j;emin=e2; if (e2<min_hop1) break;}
+					if (e2<emin) {hop_number=j;emin=e2;
+					if (e2<4) break;}
 					else break;
 				}
 			}
@@ -7230,7 +7238,8 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 				//	for (int j=4;j>=3;j--) {
 					e2=pccr[hop1][hop0][rmax][j]-oc;
 					if (e2<0) e2=-e2;
-					if (e2<emin) {hop_number=j;emin=e2;if (e2<min_hop1) break;}
+					if (e2<emin) {hop_number=j;emin=e2;
+					if (e2<4) break;}
 					else break;
 				}
 			}
@@ -7240,7 +7249,7 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 			
 			//colin
 			
-			rmax=25;
+			//rmax=25;
 			int hop0i=pccr[hop1][hop0][rmax][4];
 			int[] colin= new int[9];
 			colin[4]=hop0i;//pccr[hop1][hop0i][rmax][4];// 
