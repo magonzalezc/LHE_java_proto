@@ -1,4 +1,4 @@
-package Qmetrics;
+package qmetrics;
 
 public class PSNRutil {
 

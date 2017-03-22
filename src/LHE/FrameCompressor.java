@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.util.Calendar;
 import java.util.Date;
 
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
 
 /**
  * 
