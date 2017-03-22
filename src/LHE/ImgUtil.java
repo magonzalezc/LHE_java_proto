@@ -112,6 +112,10 @@ public class ImgUtil {
 	public float[][] label_YUV;// label[0] is the label of luminance, label[1] and label[2] are chrominance
 	
 	
+	//experimental for LHE2
+	public int [] LHE2_removed_pix;
+	
+	
 	//color mode 0:444 , 1:422 2:420 3:400
 	//color_mode=3 is black&white
 	public int color_mode=0;
@@ -166,6 +170,10 @@ height=orig.height;
 	//mask=new int[width*height];
 	countdown=new int[width*height];
 	
+	
+	//removed_pix experimental for LHE2
+	LHE2_removed_pix=new int[width*height];
+	
 	//now copy YUV and interpolated
 	int pixels=height*width;
 	for (int component=0;component<3;component++)
@@ -194,6 +202,9 @@ height=orig.height;
 			label_YUV[component][i]=orig.label_YUV[component][i];
 	}//i
 	}//component
+	
+	
+	
 }
 	//******************************************************************************
 	public void BMPtoYUV(String pathImagen)
@@ -354,6 +365,10 @@ height=orig.height;
 		//mask=new int[width*height];
 		countdown=new int[width*height];
 
+		
+		//removed_pix experimental for LHE2
+		LHE2_removed_pix=new int[width*height];
+		
 		//this bucle converts BufferedImage object ( which is "img") into YUV array (luminance and chrominance)
 		int i=0;
 		for (int y=0;y<height;y++)  {
