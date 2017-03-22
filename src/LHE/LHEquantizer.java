@@ -1453,7 +1453,7 @@ System.exit(0);
 							//positive hops computation
 							//-------------------------
 							int rmax=25;//40;
-							rmax=30;
+							rmax=27;
 							//hop1=8;
 							
 							//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
@@ -7210,7 +7210,7 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 			//positive hops computation
 			//-------------------------
 			int rmax=25;//40;
-			rmax=30;
+			rmax=27;
 			//hop1=8;
 			
 			//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
