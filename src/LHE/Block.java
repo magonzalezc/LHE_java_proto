@@ -6994,6 +6994,197 @@ public void fillFrontierV(int[][]src)
 					}//y
 				}	
 				//*******************************************************************
+				
+				public void interpolateEPXV_002( int[][] src_YUV, int[][] result_YUV)
+				{
+					float lenx=lx_sc;
+					//lenx=lx;
+					//gradient PPPy side c
+					float grycy_sc=(ppp[1][1]-ppp[1][0])/(lenx-1);//lya_sc;
+					//gradient PPPy side d
+					float grydy_sc=(ppp[1][3]-ppp[1][2])/(lenx-1);
+
+					//en la vertical no hace falta porque el bloque esta comprimido y no desplazado
+					float ppp_yc=ppp[1][0];//-grycy_sc*(ppp[0][0]/2)*((lx_sc)/(lx));
+					float ppp_yd=ppp[1][2];//-grydy_sc*(ppp[0][2]/2)*((lx_sc)/(lx));
+
+					// pppx initialized to ppp_yc
+					float pppy=ppp_yc;
+
+					//input image is downsampled_YUV. block width is lx_sc
+					int y=0;
+
+					//dont scan lx but lenx. ( lenx value is lx or lx_sc)
+					for (int x=xini;x<xini+lenx;x++)
+					{
+						float gry_sc=0;
+						//if (ppp_yc!=ppp_yd) gry_sc=(2*ly-2*ppp_yc*(ly_sc)+ppp_yc-ppp_yd)/((ly_sc-1)*ly_sc);
+
+						gry_sc=(ppp_yd-ppp_yc)/(ly_sc-1);
+						
+						//ppp_yc is updated at each iteration
+						pppy=ppp_yc;//-grycy_sc;
+
+						float yf=yini+pppy-1f;//1;
+
+						//previous interpolated y coordinate
+						int y_anti=(int)(yf-pppy+0.5f);
+
+						// bucle for horizontal scanline 
+						// scans the downsampled image, pixel by pixel
+						for (int y_sc=yini;y_sc<yini+ly_sc;y_sc++)
+						{
+							//end of block in nearest neighbour mode
+							//if ( y_sc==yini+ly_sc-1) yf=yfin;
+
+							//integer interpolated y coordinate 
+							y=(int) (yf+0.5f);
+							if (y>yfin) y=yfin;//esta protección no hace falta
+
+							if (y_sc==yini) 
+							{
+								//nearest neighbour mode: copy sample into ppp/2 pixels
+								for (int i=yini;i<=y;i++)
+								{
+									result_YUV[0][i*img.width+x]=src_YUV[0][yini*img.width+x];
+								}	
+							}
+							// y_sc is not yini  
+							else 
+							{
+								for (int i=y_anti+1;i<=y;i++)
+								{
+									result_YUV[0][i*img.width+x]=src_YUV[0][y_sc*img.width+x];
+								}
+							}
+							y_anti=y;
+							pppy+=gry_sc;
+							yf+=pppy;//ok
+						}//y
+						ppp_yc+=grycy_sc;
+						ppp_yd+=grydy_sc;
+					}//x
+				}	
+				//*******************************************************************
+				/**
+				 * horizontal interpolation in EPX mode
+				 * 
+				 *  the interpolation process is: first vertical then horizontal
+				 * @param src_YUV
+				 * @param result_YUV
+				 */
+				public void interpolateEPXH_002( int[][] src_YUV, int[][] result_YUV)
+				{
+
+					float leny=ly;
+					//leny=ly_sc;
+					float gryax_sc=0;
+					//gradient x of side a
+					if (ppp[0][2]!=ppp[0][0])
+						gryax_sc=(ppp[0][2]-ppp[0][0])/(leny-1);//lya_sc;
+					float grybx_sc=0;
+					if (ppp[0][3]!=ppp[0][1])
+						grybx_sc=(ppp[0][3]-ppp[0][1])/(leny-1);//b_sc;
+
+					//initial ppp values of sides "a" and "b"
+					float ppp_xa=ppp[0][0];
+					float ppp_xb=ppp[0][1];
+
+
+					// pppx is initialized to ppp_xa
+					float pppx=ppp_xa;
+
+
+					int x=0;
+					//float grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);
+					int x_anti=0;
+
+
+					for (int y=yini;y<yini+leny;y++)
+					{
+						//starts at side c ( which is y==yini)
+						float grx_sc=0;
+
+						//if (ppp_xa!=ppp_xb) grx_sc=(2*lx +ppp_xa-ppp_xb-2*ppp_xa*lx_sc)/((lx_sc-1)*lx_sc);				
+						grx_sc=(ppp_xb-ppp_xa)/(lx_sc-1);
+						
+						pppx=ppp_xa;
+						// sample 
+
+						float xf=xini+pppx-1;// -1 because xini exists
+
+						x_anti=(int)(xf-pppx+0.5f);
+
+						// bucle for horizontal scanline 
+						for (int x_sc=xini;x_sc<xini+lx_sc;x_sc++)
+						{
+							//if ( x_sc==xini+lx_sc-1) xf=xfin;
+
+							x=(int) (xf+0.5f);
+							if (x>xfin) x=xfin;
+
+							int A,B,C,D,F,G,H,I;
+							if (x_sc==xini) 
+							{
+								//nearest neighbour:copy sample into ppp/2 pixels
+								for (int i=xini;i<=x;i++)
+								{
+									//result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+									if (y>0 && y<img.height-1 && i>0 && i<img.width-1 && x<img.width-1 && x_sc< img.width-1 && x_sc>0){
+										A = result_YUV[0][(y-1)*img.width+(i-1)];
+										B = result_YUV[0][(y-1)*img.width+i];
+										C = result_YUV[0][(y-1)*img.width+(i+1)];
+										D = result_YUV[0][y*img.width+(i-1)];
+										F = src_YUV[0][y*img.width+(x_sc+1)];
+										G = src_YUV[0][(y+1)*img.width+(x_sc)];
+										H = src_YUV[0][(y+1)*img.width+(x_sc)];
+										I = src_YUV[0][(y+1)*img.width+(x_sc+1)];
+
+										if (i<60 && y < 10) {
+											System.out.println("DOWN Y " + y + " X " + x_sc + " i " + i + " x " + x + " INTERPOLATED Y " + y + " X " + i + " A " + A + " B " + B + " C " + C + " D " + D + " F " + F + " G " + G + " H " + H + " I " + I);
+										}
+										
+										result_YUV[0][y*img.width+i]= D == B && B != F && D != H ? D : src_YUV[0][y*img.width+x_sc];			
+										result_YUV[0][y*img.width+i]= B == F && B != D && F != H ? F : src_YUV[0][y*img.width+x_sc];			
+
+										if (result_YUV[0][y*img.width+i]== D && result_YUV[0][y*img.width+(i-1)] != src_YUV[0][y*img.width+x_sc]) {
+											//System.out.println("ELIJO D");
+										}
+									} else {
+										result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+									}
+								}
+							}// if x_sc==xini
+
+							else  // x_sc is not xini
+							{
+								for (int i=x_anti+1;i<=x;i++)
+								{
+									if (y>0 && i>0 && i<img.width-1 && x<img.width-1 && x_sc< img.width-1){
+										A = result_YUV[0][(y-1)*img.width+(i-1)];
+										B = result_YUV[0][(y-1)*img.width+i];
+										C = result_YUV[0][(y-1)*img.width+(i+1)];
+										D = src_YUV[0][y*img.width+(x_sc)];
+										F = src_YUV[0][y*img.width+(x_sc+1)];
+										
+										result_YUV[0][y*img.width+i]= D == B && B != F ? D : src_YUV[0][y*img.width+x_sc];
+									} else {
+										result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+									}
+									//result_YUV[0][y*img.width+i]=src_YUV[0][y*img.width+x_sc];
+									//if (y==b.yini+leny-1) result_YUV[0][y*img.width+i]=255;
+								}
+							}
+
+							x_anti=x;
+							pppx+=grx_sc;
+							xf+=pppx;///2;//ok
+						}//x
+						ppp_xa+=gryax_sc;
+						ppp_xb+=grybx_sc;
+					}//y
+				}	
+				//*******************************************************************
 //***********************************************************************************
 // esta funcion implementa el algoritmo EPX y retorna 4 pixeles nuevos a partir del pixel
 // de color O (original)

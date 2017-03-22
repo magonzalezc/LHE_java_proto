@@ -21,7 +21,7 @@ import LHE.FramePlayer;
 import LHE.VideoCompressor;
 
 //classes from package Qmetrics
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
 
 public class MainTest {
 	//static Scanner keyb = new Scanner (System.in);		

@@ -1,5 +1,7 @@
 import LHE.*;
 import Qmetrics.*;
+import qmetrics.PSNR;
+
 import java.util.Date;
 
 

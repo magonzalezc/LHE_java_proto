@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import kanzi.test.MySSIM;
-import Qmetrics.PSNR;
+import qmetrics.PSNR;
 
 public class FramePlayer {
 
@@ -175,7 +175,7 @@ public class FramePlayer {
 				else if (INTERPOL.equals("EXPERIMENTAL"))bi.interpolateAdaptV(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
 				else if (INTERPOL.equals("NNL"))bi.interpolateNNLV(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
 				else if (INTERPOL.equals("NNSR"))bi.interpolateNNSRV_001(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
-				else if (INTERPOL.equals("EPX"))bi.interpolateEPXV_001(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
+				else if (INTERPOL.equals("EPX"))bi.interpolateNeighbourV(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
 				
 				//if (bi.bilineal) bi.interpolateBicubicV(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
 			//else	bi.interpolateNeighbourV(img.downsampled_LHE_YUV,img.intermediate_interpolated_YUV);
@@ -225,7 +225,7 @@ public class FramePlayer {
 				else if (INTERPOL.equals("EXPERIMENTAL"))bi.interpolateAdaptH(img.intermediate_interpolated_YUV,img.interpolated_YUV);
 				else if (INTERPOL.equals("NNL"))bi.interpolateNNLH(img.intermediate_interpolated_YUV,img.interpolated_YUV);
 				else if (INTERPOL.equals("NNSR"))bi.interpolateNNSRH_001(img.intermediate_interpolated_YUV,img.interpolated_YUV);
-				else if (INTERPOL.equals("EPX"))bi.interpolateEPXH_001(img.intermediate_interpolated_YUV,img.interpolated_YUV);
+				else if (INTERPOL.equals("EPX"))bi.interpolateNeighbourH(img.intermediate_interpolated_YUV,img.interpolated_YUV);
 				
 			}
 		}
@@ -306,9 +306,12 @@ public class FramePlayer {
 		
 		if (INTERPOL.equals("EPX")) {
 			
-			
+			//filterEPX_v001 ();
+			//for (int i=1; i<5; i++)
+			filterEPX_v006 ();
+
 			//filterEPX4x(16);
-			filterEPX2x(11,16);
+			//filterEPX2x(11,16);
 			
 			
 			//iterando queda bien para .1bpp
@@ -318,6 +321,8 @@ public class FramePlayer {
 			//filterEPX4x();
 		}
 		
+		img.YUVtoBMP("./output_img/filter_marker.bmp",img.filter_marker);
+
 		//---------------------------------------------------
 		//saving file
 		if (!MODE.equals("HOMO"))
@@ -389,7 +394,7 @@ public class FramePlayer {
 		
 		//ahora ya tenemos a downsampled LHE. procedemos calcular el PSNR de cada bloque escalado
 		//---------------------------------------------------------------------------------------
-		Qmetrics.PSNRutil my_psnr=new Qmetrics.PSNRutil() ;
+		qmetrics.PSNRutil my_psnr=new qmetrics.PSNRutil() ;
 		for ( int y=0 ; y<grid.number_of_blocks_V;y++)
 		{
 			for ( int x=0 ; x<grid.number_of_blocks_H;x++)
@@ -1007,6 +1012,345 @@ public void filter1pixEPX2x(int[] im,int y,int x, int um)
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //*************************************************************************************
+public void filterEPX_v001()
+{
+	System.out.println("filtering EPX001...");
+	int[] im=img.interpolated_YUV[0];
+	
+	int[] im_orig = new int [img.width*img.height];
+	
+	for (int i=0; i< img.width*img.height; i++) {
+		im_orig[i] = im[i];
+	}
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	for (int y=1; y<img.height-1; y++) {
+		for (int x=1; x<img.width-1; x++) {
+			
+			A = im_orig[(y-1)*img.width + (x-1)];
+			B = im_orig[(y-1)*img.width + x];
+			C = im_orig[(y-1)*img.width + (x+1)];
+			D = im_orig[y*img.width + (x-1)];
+			E = im_orig[y*img.width + x];
+			F = im_orig[y*img.width + (x+1)];
+			G = im_orig[(y+1)*img.width + (x-1)];
+			H = im_orig[(y+1)*img.width + x];
+			I = im_orig[(y+1)*img.width + (x+1)];
+
+			
+			if (B != H && D != F) {
+				im[y*img.width + x] = ((D == B) || (D==H)) ? D : E;
+				im[y*img.width + x] = ((B == F) || (F==H)) ? F : E;
+			} else {
+				im[y*img.width + x] = E;
+				
+			}		
+		}
+	}
+	
+	System.out.println("filtered EPX001...");
+
+}
+//*************************************************************************************
+public void filterEPX_v002()
+{
+	System.out.println("filtering EPX002...");
+	int[] im=img.interpolated_YUV[0];
+	
+	int[] im_orig = new int [img.width*img.height];
+	
+	for (int i=0; i< img.width*img.height; i++) {
+		im_orig[i] = im[i];
+	}
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	for (int y=1; y<img.height-1; y++) {
+		for (int x=1; x<img.width-1; x++) {
+			
+			A = im_orig[(y-1)*img.width + (x-1)];
+			B = im_orig[(y-1)*img.width + x];
+			C = im_orig[(y-1)*img.width + (x+1)];
+			D = im_orig[y*img.width + (x-1)];
+			E = im_orig[y*img.width + x];
+			F = im_orig[y*img.width + (x+1)];
+			G = im_orig[(y+1)*img.width + (x-1)];
+			H = im_orig[(y+1)*img.width + x];
+			I = im_orig[(y+1)*img.width + (x+1)];
+
+			if (B != H && D != F) {
+				//im[y*img.width + x] = ((D == B) || (D==H)) ? D : E;
+				//im[y*img.width + x] = ((B == F) || (F==H)) ? F : E;
+				if (D==B || D==H) {
+					if (B == F || F==H) {
+						im[y*img.width + x] = (F + D)/2;
+					} else {
+						im[y*img.width + x] = F; //ESTO no esta bien, tendría que ser D
+					}
+				} else if (B == F || F==H) {
+					im[y*img.width + x] = F;
+				} else {
+					im[y*img.width + x] = E;
+				}
+			} else {
+				im[y*img.width + x] = E;
+				
+			}				
+		}
+	}
+	
+	System.out.println("filtered EPX002...");
+
+}
+//*************************************************************************************
+
+public void filterEPX_v003()
+{
+	System.out.println("filtering EPX003...");
+	int[] im=img.interpolated_YUV[0];
+	
+	int[] im_orig = new int [img.width*img.height];
+	
+	for (int i=0; i< img.width*img.height; i++) {
+		im_orig[i] = im[i];
+	}
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	for (int y=1; y<img.height-1; y++) {
+		for (int x=1; x<img.width-1; x++) {
+			
+			A = im_orig[(y-1)*img.width + (x-1)];
+			B = im_orig[(y-1)*img.width + x];
+			C = im_orig[(y-1)*img.width + (x+1)];
+			D = im_orig[y*img.width + (x-1)];
+			E = im_orig[y*img.width + x];
+			F = im_orig[y*img.width + (x+1)];
+			G = im_orig[(y+1)*img.width + (x-1)];
+			H = im_orig[(y+1)*img.width + x];
+			I = im_orig[(y+1)*img.width + (x+1)];
+
+			if (B != H && D != F) {
+				//im[y*img.width + x] = ((D == B) || (D==H)) ? D : E;
+				//im[y*img.width + x] = ((B == F) || (F==H)) ? F : E;
+				if (D==B || D==H) {
+
+
+					if (B == F || F == H) {
+						im[y*img.width + x] = F;
+					} else {
+						im[y*img.width + x] = D;
+					}
+				} else if (B == F || F == H) {
+					im[y*img.width + x] = F;
+				} else {
+					im[y*img.width + x] = E;
+				}
+			} else {
+				im[y*img.width + x] = E;
+				
+			}				
+		}
+	}
+	
+	System.out.println("filtered EPX003...");
+
+}
+//*************************************************************************************
+
+public void filterEPX_v004()
+{
+	System.out.println("filtering EPX004...");
+	int[] im=img.interpolated_YUV[0];
+	
+	int[] im_orig = new int [img.width*img.height];
+	
+	for (int i=0; i< img.width*img.height; i++) {
+		im_orig[i] = im[i];
+	}
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	for (int y=1; y<img.height-1; y++) {
+		for (int x=1; x<img.width-1; x++) {
+			
+			A = im_orig[(y-1)*img.width + (x-1)];
+			B = im_orig[(y-1)*img.width + x];
+			C = im_orig[(y-1)*img.width + (x+1)];
+			D = im_orig[y*img.width + (x-1)];
+			E = im_orig[y*img.width + x];
+			F = im_orig[y*img.width + (x+1)];
+			G = im_orig[(y+1)*img.width + (x-1)];
+			H = im_orig[(y+1)*img.width + x];
+			I = im_orig[(y+1)*img.width + (x+1)];
+
+			im[(y-1)*img.width + (x - 1)] = E;
+			im[(y-1)*img.width + x] = E;
+			im[(y-1)*img.width + (x + 1)] = E;
+			im[y*img.width + (x - 1)] = E;
+			im[y*img.width + x ] = E;
+			im[y*img.width + (x + 1)] = E;
+			im[(y+1)*img.width + (x - 1)] = E;
+			im[(y+1)*img.width + x] = E;
+			im[(y+1)*img.width + (x+1)] = E;
+
+			if (D==B && D!=H && B!=F) {
+				im[(y-1)*img.width + (x - 1)] = D;
+			}
+			
+			if ((D==B && D!=H && B!=F && E!=C) || (B==F && B!=D && F!=H && E!=A)) {
+				im[(y-1)*img.width + x] = B;
+			}
+			
+			if (B==F && B!=D && F!=H) {
+				im[(y-1)*img.width + (x +1)] = F;
+			}
+			
+			if ((H==D && H!=F && D!=B && E!=A) || (D==B && D!=H && B!=F && E!=G)) {
+				im[y*img.width + (x - 1)] = D;
+			}
+			
+			if ((B==F && B!=D && F!=H && E!=I) || (F==H && F!=B && H!=D && E!=C)) {
+				im[y*img.width + (x + 1)] = F;
+			}
+			
+			if (H==D && H!=F && D!=B) {
+				im[(y+1)*img.width + (x - 1)] = D;
+			}
+			
+			if ((F==H && F!=B && H!=D && E!=G) || (H==D && H!=F && D!=B && E!=I)) {
+				im[(y+1)*img.width + x] = H;
+			}
+			
+			if (F==H && F!= B && H!=D) {
+				im[(y+1)*img.width + (x + 1)] = F;
+			}	
+		}
+	}
+	
+	System.out.println("filtered EPX004...");
+
+}
+//*************************************************************************************
+
+public void filterEPX_v005()
+{
+	System.out.println("filtering EPX005...");
+	int[] im=img.interpolated_YUV[0];
+	
+	int[] im_orig = new int [img.width*img.height];
+	
+	for (int i=0; i< img.width*img.height; i++) {
+		im_orig[i] = im[i];
+	}
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	for (int y=1; y<img.height-1; y++) {
+		for (int x=1; x<img.width-1; x++) {
+			
+			A = im_orig[(y-1)*img.width + (x-1)];
+			B = im_orig[(y-1)*img.width + x];
+			C = im_orig[(y-1)*img.width + (x+1)];
+			D = im_orig[y*img.width + (x-1)];
+			E = im_orig[y*img.width + x];
+			F = im_orig[y*img.width + (x+1)];
+			G = im_orig[(y+1)*img.width + (x-1)];
+			H = im_orig[(y+1)*img.width + x];
+			I = im_orig[(y+1)*img.width + (x+1)];
+
+			if (B != H && D != F) {
+				//im[y*img.width + x] = ((D == B) || (D==H)) ? D : E;
+				//im[y*img.width + x] = ((B == F) || (F==H)) ? F : E;
+				if (D==B || D==H) {
+
+
+					if (B == F || F == H) {
+						im[y*img.width + x] = D;
+					} else {
+						im[y*img.width + x] = F;
+					}
+				} else if (B == F || F == H) {
+					im[y*img.width + x] = F;
+				} else {
+					im[y*img.width + x] = E;
+				}
+			} else {
+				im[y*img.width + x] = E;
+				
+			}				
+		}
+	}
+	
+	System.out.println("filtered EPX005...");
+}
+//*************************************************************************************
+
+public void filterEPX_v006()
+{
+	System.out.println("filtering EPX006...");
+	int[] im=img.interpolated_YUV[0];
+	
+	int[] im_orig = new int [img.width*img.height];
+	
+	for (int i=0; i< img.width*img.height; i++) {
+		im_orig[i] = im[i];
+	}
+	
+	int A,B,C,D,E,F,G,H,I;
+	
+	for (int y=0; y<img.height-1; y+=2) {
+		for (int x=0; x<img.width-1; x+=2) {
+			
+			A = im[y*img.width + x];
+			B = im[y*img.width + (x+1)];
+			C = im[(y+1)*img.width + x];
+			D = im[(y+1)*img.width + (x+1)];
+			
+			/*
+			if (A==C && B==D && A!=B) {
+				im[y*img.width + (x+1)] = A;
+				img.filter_marker[y*img.width + (x+1)] = A;
+			} else if (A==B && B==C) {
+				im[y*img.width + (x+1)] = A;
+				img.filter_marker[y*img.width + (x+1)] = A;
+			} 
+			*/
+			
+			/*
+			if (A==B && B==C && D != A) {
+				im[y*img.width + (x+1)] = A;
+				img.filter_marker[y*img.width + (x+1)] = A;
+			}
+			*/
+			
+			if (A==C && A != B && A != D) {
+				im[y*img.width + (x+1)] = A;
+				im[(y+1)*img.width + (x+1)] = A;
+				img.filter_marker[y*img.width + (x+1)] = A;
+				img.filter_marker[y*img.width + (x+1)] = A;
+
+			}
+			
+			if (A==B && B==C) {
+				//im[(y+1)*img.width + (x+1)] = A;
+
+			}
+			
+			if (B==C && C==D) {
+				//im[y*img.width + x] = B;
+			}
+			
+			
+		}	
+	}
+	
+	System.out.println("filtered EPX006...");
+}
+
+//*************************************************************************************
+
 public boolean filter1pixEPX4x(int[] im,int y,int x, int um)
 {
 	//0  1  2  3

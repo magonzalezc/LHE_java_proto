@@ -8,6 +8,7 @@ import LHE.LHEquantizer;
 import LHE.PRblock;
 import LHE.VideoCompressor;
 import Qmetrics.PSNR;
+import qmetrics.Qmetrics;
 
 
 public class ElasticDownsamplingTester {

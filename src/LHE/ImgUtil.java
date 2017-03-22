@@ -76,6 +76,8 @@ public class ImgUtil {
 	//interpolated image components
 	public int [][] intermediate_interpolated_YUV; //vertical interpolation
 	public int [][] interpolated_YUV;//v+h interpolation
+	
+	public int [] filter_marker;
 
 	//mask before inter-block interpolation
 	//public int [] mask;
@@ -327,7 +329,8 @@ height=orig.height;
 
 		intermediate_downsampled_YUV=new int[3][width*height];//not strictly needed. we can colapse it on downsampledYUV
 		downsampled_YUV=new int[3][width*height];
-
+		
+		filter_marker=new int[width*height];
 		//for encoder & decoder
 		downsampled_LHE_YUV=new int[3][width*height];
 		boundaries_YUV=new int[3][width*height];
