@@ -152,6 +152,7 @@ public float[] compressBasicFrame(String optionratio)
 	int total_bits=0;//total bits taken by the image
 	
 	//save hops
+	//en modo BASIC el debug se pone a true siempre desde MainTest, asi vemos los hops en un fichero
 	if (DEBUG) img.saveHopsToTxt("./output_debug/hops1stLHE_signed.txt",true);
 	if (DEBUG) img.saveHopsToTxt("./output_debug/hops1stLHE_unsigned.txt",false);
 	
@@ -191,9 +192,18 @@ public float[] compressLHE2()
 	System.out.println(" result image is ./output_img/LHE2_YUV.bmp");
 	
 	
-	lhe.quantizeOneHopPerPixel_LHE2(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento10(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento20(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento30(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento31(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento33(img.hops[0],img.LHE_YUV[0]);// bueno
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento35(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_LHE2_experimento36(img.hops[0],img.LHE_YUV[0]);
+	//lhe.esperanza_matematica_v001(img.hops[0],img.LHE_YUV[0]);// bueno
 	
 	
+	img.YUVtoBMP("./output_debug/LHE2_removed.bmp",img.LHE2_removed_pix);
 	
 	//lhe.quantizeOneHopPerPixel_prueba(img.hops[0],img.LHE_YUV[0]);
 	//PRblock.img=img;
@@ -234,6 +244,11 @@ public float[] compressLHE2()
 	
 	System.out.println("total_hops: "+be.totalhops);
 	System.out.println("image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
+	
+	System.out.println("lhe2 bits ahorrados:"+lhe.LHE2_resta);
+	lenbin=lenbin-lhe.LHE2_resta;
+	System.out.println("LHE2 image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
+	
 	
 	result[1]=(float)lenbin/(img.width*img.height);
 	
