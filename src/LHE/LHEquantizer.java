@@ -1368,6 +1368,9 @@ System.exit(0);
 					int max_hop1=10;//10;//8;//8;//16;//8;// hop1 interval 4..8
 					int min_hop1=6;//4;//4;// 
 					int start_hop1=(max_hop1+min_hop1)/2;
+					int rmax=25;//40;
+					rmax=27;//27;
+					//hop1=8;
 					
 					
 					int hop1=start_hop1;//max_hop1;
@@ -1378,6 +1381,7 @@ System.exit(0);
 					int pix=0;//pixel possition, from 0 to image size        
 					boolean last_small_hop=false;// indicates if last hop is small
 
+					
 					
 					float error_center=0;
 					float error_avg=0;
@@ -1452,9 +1456,7 @@ System.exit(0);
 							//System.out.println("hop1max:"+max_hop1);
 							//positive hops computation
 							//-------------------------
-							int rmax=25;//40;
-							rmax=27;
-							//hop1=8;
+							
 							
 							//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
 							//if (min_hop1<4) min_hop1=4;
@@ -1539,6 +1541,7 @@ System.exit(0);
 							//assignment of final color value
 							//--------------------------------
 							result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+							result_YUV[pix]=pccr[hop1][hop0][rmax][hop_number];
 							//result_YUV[pix]=colin[hop_number];//pccr[hop1][hop0][25][hop_number];
 							
 							//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
@@ -7106,9 +7109,9 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 	System.out.println("quantizying...hello");
 	
 	int max_hop1=10;//8;//8;//16;//8;// hop1 interval 4..8
-	int min_hop1=4;//4;// 
+	int min_hop1=6;//4;// 
 	int start_hop1=(max_hop1+min_hop1)/2;
-	
+	int rmax=27;
 	
 	int hop1=start_hop1;//max_hop1;
 	int hop0=0; // predicted signal
@@ -7118,6 +7121,7 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 	int pix=0;//pixel possition, from 0 to image size        
 	boolean last_small_hop=false;// indicates if last hop is small
 
+	
 	
 	float error_center=0;
 	float error_avg=0;
@@ -7209,8 +7213,6 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 			//System.out.println("hop1max:"+max_hop1);
 			//positive hops computation
 			//-------------------------
-			int rmax=25;//40;
-			rmax=27;
 			//hop1=8;
 			
 			//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
@@ -7271,8 +7273,8 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 			
 			
 			// correccion
-			int mini=2;
-			int maxi=6;
+			int mini=2;//2;//2;
+			int maxi=6;//6;//6;
 			img.LHE2_removed_pix[pix]=255;//oc;
 			
 			
@@ -7365,7 +7367,7 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 			
 			//assignment of final color value
 			//--------------------------------
-			result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
+			result_YUV[pix]=pccr[hop1][hop0][rmax][hop_number];
 			
 			//System.out.print (result_YUV[pix]+" "+hop_number);
 			//result_YUV[pix]=colin[hop_number];
@@ -7429,8 +7431,51 @@ public void quantizeOneHopPerPixel_LHE2_experimento36(int[] hops,int[] result_YU
 	
 	LHE2_resta=counter_resta;
 	postfilter_LHE2(hops,result_YUV);
-	
+	//postfilter_LHE2_v002(hops,result_YUV);
+	System.out.println("hola");
 	
 }//end function
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+public void postfilter_LHE2_v002(int[] hops,int[] result_YUV)
+{
+
+	for (int y=0;y<img.height;y++)  {
+		for (int x=0;x<img.width;x++)  {
+			
+			int pix=x+y*img.width;
+			//check eliminado
+			
+			if (x>0 && y>0 && x<511 && y<511)
+			{	
+			if (img.LHE2_removed_pix[pix]==0)
+			{
+				result_YUV[pix]=(result_YUV[pix-1]+result_YUV[pix-img.width+1])/2;
+			/*
+			
+				if (y%2!=1)//tengo izquierdo y derecho disponible
+				  {
+				 result_YUV[pix]=(result_YUV[pix-1]+result_YUV[pix+1])/2;
+				 //img.LHE2_removed_pix[pix]=(img.LHE2_removed_pix[pix-1]+img.LHE2_removed_pix[pix+1])/2;
+			      }
+				else
+				  {
+					if (x%2==0)
+					{result_YUV[pix]=(result_YUV[pix-img.width]+result_YUV[pix+img.width])/2;
+					//img.LHE2_removed_pix[pix]=255;//(img.LHE2_removed_pix[pix-1]+img.LHE2_removed_pix[pix+1])/2;
+					}
+					else
+					{
+					result_YUV[pix]=(result_YUV[pix-img.width]+result_YUV[pix+img.width])/2;
+					}
+				  }
+			*/	
+			}
+			
+			}//
+			
+		}
+		}
+}
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 }
