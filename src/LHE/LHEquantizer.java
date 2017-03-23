@@ -28,7 +28,6 @@ public class LHEquantizer {
 	static int[][][][] pcck; //precomputed color component
 	
 	static int[][][][] pccr; //precomputed color component
-
 	
 	int contafix=0;
 	int bits_fix=0;
@@ -46,7 +45,7 @@ public class LHEquantizer {
 	
 	//*********************************************************************************************
 	public void init()
-	{
+	{		
 		//cache to avoid pow functions
 		float[][][][] cache_pow; //[hops][+/-][component value][k x 100]
 
@@ -1411,9 +1410,11 @@ System.exit(0);
 								hop0=result_YUV[x-1];
 							}else if (x==0 && y==0) {  
 								hop0=oc;//first pixel always is perfectly predicted! :-)  
-							}			
-
+							}	
 							
+							int difference = oc - hop0 + 255; //se le suma 255 para evitar negativos.
+
+							img.histogram[difference]++;
 							//paeth
 							/*
 							int A=0;
@@ -1473,8 +1474,7 @@ System.exit(0);
 									e2=oc-pccr[hop1][hop0][rmax][j];
 									if (e2<0) e2=-e2;
 									if (e2<emin) {hop_number=j;emin=e2;
-									              //if (e2<min_hop1) break;
-													if (e2<4) break;
+									              if (e2<4) break;
 									              }
 									else break;
 								}
@@ -1496,8 +1496,7 @@ System.exit(0);
 									e2=pccr[hop1][hop0][rmax][j]-oc;
 									if (e2<0) e2=-e2;
 									if (e2<emin) {hop_number=j;emin=e2;
-									            //if (e2<min_hop1) break;
-												if (e2<4) break;
+									            if (e2<4) break;
 									            }
 									else break;
 								}
@@ -1545,7 +1544,15 @@ System.exit(0);
 							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
 							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
 
+							img.hops_count[hop_number]++;
 							
+							int quantizer_error = Math.abs(oc-result_YUV[pix]);
+							
+							img.error_count[hop_number] += quantizer_error;
+							
+							if (quantizer_error > img.maximum_error[hop_number])
+								img.maximum_error[hop_number] = quantizer_error;
+
 							//calculo de errores medios
 							//---------------------------
 							error_center+=(oc-result_YUV[pix]);
@@ -4038,15 +4045,23 @@ public void initPreComputations()
 			float ratio_neg=cache_ratio[1][hop1][hop0][rmax];
 
 			// COMPUTATION OF LUMINANCES:
+			float offset = 0;
 			// luminance of possitive hops
 			h6[hop1][hop0] = hop1*ratio_pos;
+			if(h6[hop1][hop0]<hop1) h6[hop1][hop0] = hop1;
 			h7[hop1][hop0] = h6[hop1][hop0]*ratio_pos;
-			h8[hop1][hop0] = h7[hop1][hop0]*ratio_pos;
+			if(h7[hop1][hop0]<h6[hop1][hop0]) h7[hop1][hop0] = h6[hop1][hop0];
+			h8[hop1][hop0] = h7[hop1][hop0]*(ratio_pos+offset);
+			if(h8[hop1][hop0]<h7[hop1][hop0]) h8[hop1][hop0] = h7[hop1][hop0];
 
 			//luminance of negative hops	                        
 			h2[hop1][hop0] =hop1*ratio_neg;
+			if(h2[hop1][hop0]<hop1) h2[hop1][hop0] = hop1;
 			h1[hop1][hop0] = h2[hop1][hop0]*ratio_neg;
-			h0[hop1][hop0] = h1[hop1][hop0]*ratio_neg;
+			if(h1[hop1][hop0]<h2[hop1][hop0]) h1[hop1][hop0] = h2[hop1][hop0];
+			h0[hop1][hop0] = h1[hop1][hop0]*(ratio_neg+offset);
+			if(h0[hop1][hop0]<h1[hop1][hop0]) h0[hop1][hop0] = h1[hop1][hop0];
+
 
 			
 			//final color component ( luminance or chrominance). depends on hop1

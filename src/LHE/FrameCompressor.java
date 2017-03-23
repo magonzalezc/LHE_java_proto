@@ -173,6 +173,9 @@ public float[] compressBasicFrame(String optionratio)
 		}
 	int lenbin=huff.getLenTranslateCodes(be.down_stats_saco[0]);
 	
+	//METRICS
+	img.saveMetricsToCsv("./output_debug/metrics.csv");
+
 	System.out.println("total_hops: "+be.totalhops);
 	System.out.println("image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
 	

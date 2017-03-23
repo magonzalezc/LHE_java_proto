@@ -13,6 +13,13 @@ import java.io.*;
  * 
  */
 public class ImgUtil {
+	
+	//METRICS
+	int[] histogram = new int [510]; 
+	int[] hops_count = new int [9]; 
+	int[] error_count = new int[9];
+	int[] maximum_error = new int[9];
+
 
 	int [][] SOLY2;
 
@@ -467,47 +474,85 @@ height=orig.height;
 	}
 	//**************************************
 	//*******************************************************************************
-		public void saveHopsToTxtUnsigned(String path_file)
-		{
-			try{
-				System.out.println("Entrando en salvaTXT");
-				DataOutputStream d = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path_file)));
+	public void saveHopsToTxtUnsigned(String path_file)
+	{
+		try{
+			System.out.println("Entrando en salvaTXT");
+			DataOutputStream d = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path_file)));
 
 
-				//primero escribo el ancho, alto y primer color:
-				d.writeBytes(width+"\n");
-				d.writeBytes(height+"\n");
-				d.writeBytes(YUV[0][0]+"\n");
-				for (int i=0;i<width*height;i++){
+			//primero escribo el ancho, alto y primer color:
+			d.writeBytes(width+"\n");
+			d.writeBytes(height+"\n");
+			d.writeBytes(YUV[0][0]+"\n");
+			for (int i=0;i<width*height;i++){
 
-					if ((i%width==0)&& (i>0)) {d.writeBytes("\n");}
-
-
-
-					//esto salva los hops normales[0..4..8]
-					//d.writeBytes(hops[0][i]+"");
-
-					//esto los salva con signo
-					/*
-					if (hops[0][i]==0)d.writeBytes("-4");
-					else if (hops[0][i]==1)d.writeBytes("-3");
-					else if (hops[0][i]==2)d.writeBytes("-2");
-					else if (hops[0][i]==3)d.writeBytes("-1");
-					else if (hops[0][i]==4)d.writeBytes(" 0");
-					else if (hops[0][i]==5)d.writeBytes("+1");
-					else if (hops[0][i]==6)d.writeBytes("+2");
-					else if (hops[0][i]==7)d.writeBytes("+3");
-					else if (hops[0][i]==8)d.writeBytes("+4");
-					else d.writeBytes("  ");
-					*/
-				}
-
-				d.close();
-			}catch(Exception e){System.out.println("ERROR writing hops in txt format:"+e);}	
+				if ((i%width==0)&& (i>0)) {d.writeBytes("\n");}
 
 
-		}
-		//**************************************
+
+				//esto salva los hops normales[0..4..8]
+				//d.writeBytes(hops[0][i]+"");
+
+				//esto los salva con signo
+				/*
+				if (hops[0][i]==0)d.writeBytes("-4");
+				else if (hops[0][i]==1)d.writeBytes("-3");
+				else if (hops[0][i]==2)d.writeBytes("-2");
+				else if (hops[0][i]==3)d.writeBytes("-1");
+				else if (hops[0][i]==4)d.writeBytes(" 0");
+				else if (hops[0][i]==5)d.writeBytes("+1");
+				else if (hops[0][i]==6)d.writeBytes("+2");
+				else if (hops[0][i]==7)d.writeBytes("+3");
+				else if (hops[0][i]==8)d.writeBytes("+4");
+				else d.writeBytes("  ");
+				*/
+			}
+
+			d.close();
+		}catch(Exception e){System.out.println("ERROR writing hops in txt format:"+e);}	
+
+
+	}
+	//**************************************
+		
+	public void saveMetricsToCsv(String path_file)
+	{
+		try{
+			System.out.println("Entrando en saveHistogramToCsv");
+			DataOutputStream d = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path_file)));
+
+			d.writeBytes("DELTA \n");			
+
+			for (int i=0;i<histogram.length;i++){	
+				int value = i - 255;
+				d.writeBytes(value + ";" + histogram[i] + "\n");			
+			}
+			
+			d.writeBytes("STEPS \n");			
+
+			for (int i=0;i<hops_count.length;i++){	
+				d.writeBytes(i + ";" + hops_count[i] + "\n");			
+			}
+			
+			d.writeBytes("ERROR \n");			
+
+			for (int i=0;i<error_count.length;i++){	
+				d.writeBytes(i + ";" + error_count[i] + "\n");			
+			}
+			
+			d.writeBytes("MAXIMUM ERROR \n");			
+
+			for (int i=0;i<maximum_error.length;i++){	
+				d.writeBytes(i + ";" + maximum_error[i] + "\n");			
+			}
+
+			d.close();
+		}catch(Exception e){System.out.println("ERROR writing histogram in csv format:"+e);}	
+
+
+	}
+	
 	public float getNumberOfNonZeroPixelsDown()
 	{
 		float count=0;
