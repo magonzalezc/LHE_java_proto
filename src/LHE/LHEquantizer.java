@@ -1412,9 +1412,7 @@ System.exit(0);
 								hop0=oc;//first pixel always is perfectly predicted! :-)  
 							}	
 							
-							int difference = oc - hop0 + 255; //se le suma 255 para evitar negativos.
 
-							img.histogram[difference]++;
 							//paeth
 							/*
 							int A=0;
@@ -1543,11 +1541,14 @@ System.exit(0);
 							//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
 							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
 							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
-
-							img.hops_count[hop_number]++;
 							
+							//METRICS
+							int difference = oc - hop0; 
 							int quantizer_error = Math.abs(oc-result_YUV[pix]);
-							
+
+							img.histogram[(difference+255)]++; //sumo 255 para evitar negativos
+							img.mean_square[hop_number] += difference*difference;
+							img.hops_count[hop_number]++;					
 							img.error_count[hop_number] += quantizer_error;
 							
 							if (quantizer_error > img.maximum_error[hop_number])
@@ -4010,17 +4011,14 @@ public void initPreComputations()
 			
 			// r' values for negative hops
 			cache_ratio[1][(int)(hop1)][hop0][rmax]=(float)Math.pow(percent_range*(hop0)/(hop1), 1f/3f);
-			
-			
-			
-			
-			
-			
+		
 			// control of limits
+			float min=1.0f;
 			float max=(float)rmax/10f;// if rmax is 25 then max is 2.5f;
 			if (cache_ratio[0][(int)(hop1)][hop0][rmax]>max)cache_ratio[0][hop1][hop0][rmax]=max;
 			if (cache_ratio[1][(int)(hop1)][hop0][rmax]>max)cache_ratio[1][hop1][hop0][rmax]=max;
-			
+			if (cache_ratio[0][(int)(hop1)][hop0][rmax]<min)cache_ratio[0][hop1][hop0][rmax]=min;
+			if (cache_ratio[1][(int)(hop1)][hop0][rmax]<min)cache_ratio[1][hop1][hop0][rmax]=min;
 			/*
 			float min=1.0f;//esto sobra
 			if (cache_ratio[0][(int)(hop1)][hop0][rmax]<min)cache_ratio[0][hop1][hop0][rmax]=min;
@@ -4048,20 +4046,13 @@ public void initPreComputations()
 			float offset = 0;
 			// luminance of possitive hops
 			h6[hop1][hop0] = hop1*ratio_pos;
-			if(h6[hop1][hop0]<hop1) h6[hop1][hop0] = hop1;
 			h7[hop1][hop0] = h6[hop1][hop0]*ratio_pos;
-			if(h7[hop1][hop0]<h6[hop1][hop0]) h7[hop1][hop0] = h6[hop1][hop0];
 			h8[hop1][hop0] = h7[hop1][hop0]*(ratio_pos+offset);
-			if(h8[hop1][hop0]<h7[hop1][hop0]) h8[hop1][hop0] = h7[hop1][hop0];
 
 			//luminance of negative hops	                        
 			h2[hop1][hop0] =hop1*ratio_neg;
-			if(h2[hop1][hop0]<hop1) h2[hop1][hop0] = hop1;
 			h1[hop1][hop0] = h2[hop1][hop0]*ratio_neg;
-			if(h1[hop1][hop0]<h2[hop1][hop0]) h1[hop1][hop0] = h2[hop1][hop0];
 			h0[hop1][hop0] = h1[hop1][hop0]*(ratio_neg+offset);
-			if(h0[hop1][hop0]<h1[hop1][hop0]) h0[hop1][hop0] = h1[hop1][hop0];
-
 
 			
 			//final color component ( luminance or chrominance). depends on hop1

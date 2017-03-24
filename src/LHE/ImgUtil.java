@@ -19,6 +19,7 @@ public class ImgUtil {
 	int[] hops_count = new int [9]; 
 	int[] error_count = new int[9];
 	int[] maximum_error = new int[9];
+	int[] mean_square = new int[9];
 
 
 	int [][] SOLY2;
@@ -545,6 +546,11 @@ height=orig.height;
 
 			for (int i=0;i<maximum_error.length;i++){	
 				d.writeBytes(i + ";" + maximum_error[i] + "\n");			
+			}
+			
+			d.writeBytes("MEAN SQUARE \n");			
+			for (int i=0;i<mean_square.length;i++){	
+				d.writeBytes(i + ";" + mean_square[i] + "\n");			
 			}
 
 			d.close();
