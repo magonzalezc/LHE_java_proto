@@ -15,11 +15,11 @@ import java.io.*;
 public class ImgUtil {
 	
 	//METRICS
-	int[] histogram = new int [510]; 
-	int[] hops_count = new int [9]; 
-	int[] error_count = new int[9];
-	int[] maximum_error = new int[9];
-	int[] mean_square = new int[9];
+	int[] histogram;
+	int[] hops_count; 
+	int[] error_count;
+	int[] maximum_error;
+	int[] mean_square;
 
 
 	int [][] SOLY2;
@@ -127,7 +127,14 @@ public class ImgUtil {
 	public int color_mode=0;
 	//******************************************************************************
 	public ImgUtil()
-	{}
+	{
+		histogram = new int [511]; 
+		hops_count = new int [9]; 
+		error_count = new int[9];
+		maximum_error = new int[9];
+		mean_square = new int[9];
+		
+	}
 //copy constructor
 	//******************************************************************************
 public ImgUtil(ImgUtil orig)

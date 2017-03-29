@@ -24,6 +24,7 @@ public String MODE="ELASTIC"; // [ELASTIC | HOMO] : elastic downsampling or homo
 
 
 public String path_img; 
+public String image_name;
 
 public ImgUtil img; //frame to compress
 public Grid grid;   //grid of blocks, and PRblocks 
@@ -46,7 +47,7 @@ public FrameCompressor(int number_of_threads)
 //******************************************************************
 public void loadFrame( String path_img)
 {
-	if (img==null)  img=new ImgUtil();
+	img=new ImgUtil();
 	lhe.img=img;
 	img.BMPtoYUV(path_img);
 	
@@ -117,9 +118,12 @@ public float[] compressFrame( String path_img, float cf)
 public float[] compressBasicFrame(String optionratio)
 {
 	float[] result=new float[2];//PSNR and bitrate
-	
-	img.YUVtoBMP("./output_debug/orig_YUV_BN.bmp",img.YUV[0]);
-	
+		
+	if (image_name!= null) {
+		img.YUVtoBMP("./output_debug/orig_YUV_BN_"+image_name + ".bmp",img.YUV[0]);
+	} else {
+		img.YUVtoBMP("./output_debug/orig_YUV_BN.bmp",img.YUV[0]);
+	}
 	//lhe.initGeomR();//initialize hop values 
 	System.out.println(" quantizing into hops...");
 	System.out.println(" result image is ./output_img/BasicLHE_YUV.bmp");
@@ -139,12 +143,23 @@ public float[] compressBasicFrame(String optionratio)
 	//PRblock.img=img;
 	//grid.computeMetrics();//compute metrics of all Prblocks, equalize & quantize
 	//ready to save the result in BMP format
-	img.YUVtoBMP("./output_img/BasicLHE_YUV.bmp",img.LHE_YUV[0]);
+	img.YUVtoBMP("./output_img/BasicLHE_YUV_"+image_name + ".bmp",img.LHE_YUV[0]);
 	
+	double psnr;
+	
+	if (image_name!= null) {
+		img.YUVtoBMP("./output_img/BasicLHE_YUV_"+image_name + ".bmp",img.LHE_YUV[0]);
+		psnr=PSNR.printPSNR("./output_debug/orig_YUV_BN_"+image_name + ".bmp", "./output_img/BasicLHE_YUV_"+image_name + ".bmp");
+	} else {
+		img.YUVtoBMP("./output_img/BasicLHE_YUV.bmp",img.LHE_YUV[0]);
+		psnr=PSNR.printPSNR("./output_debug/orig_YUV_BN.bmp", "./output_img/BasicLHE_YUV.bmp");
+
+	}
+
+	System.out.println(" PSNR 1st LHE:"+psnr);
+
 	//ready to compute PSNR
 	//double psnr=PSNR.printPSNR(this.path_img, "./output_img/BasicLHE_YUV.bmp");
-	double psnr=PSNR.printPSNR("./output_debug/orig_YUV_BN.bmp", "./output_img/BasicLHE_YUV.bmp");
-	System.out.println(" PSNR 1st LHE:"+psnr);
 	result[0]=(float)psnr;
 	
 	//ready for compute bit rate
@@ -174,7 +189,10 @@ public float[] compressBasicFrame(String optionratio)
 	int lenbin=huff.getLenTranslateCodes(be.down_stats_saco[0]);
 	
 	//METRICS
-	img.saveMetricsToCsv("./output_debug/metrics.csv");
+	if (image_name!= null) 
+		img.saveMetricsToCsv("./metrics/pred3_"+image_name+".csv");
+	else
+		img.saveMetricsToCsv("./metrics/metrics.csv");
 
 	System.out.println("total_hops: "+be.totalhops);
 	System.out.println("image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));

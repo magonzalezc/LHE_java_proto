@@ -1,4 +1,5 @@
 import java.io.*;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -44,6 +45,8 @@ public class MainTest {
 	System.out.println ("6) compute PSNR for a given image origin and degraded image");
 	System.out.println ("7) interpolate seams");
 	System.out.println ("8) compress LHE2");
+	System.out.println ("9) compress a directory using Basic-LHE (bit-rate non elegible)");
+
 	
 	String option =  readKeyboard();
 	System.out.println ("your option is : "+option);
@@ -59,8 +62,9 @@ public class MainTest {
 	else if (option.equals("6")) m.computePSNR();
 	//else if (option.equals("3")) m.performance();
 	else if (option.equals("7")) m.interpolateSeams();
-	else if (option.equals("8")) m.compressImageLHE2();;
-	
+	else if (option.equals("8")) m.compressImageLHE2();
+	else if (option.equals("9")) m.compressDirectoryBasicLHE();
+
 	}
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		public void compressImageLHE2()
@@ -101,6 +105,42 @@ public class MainTest {
 			System.out.println ("OJO QUE LOS BPP NO ESTAN BIEN CALCULADOS EN LHE2. LO QUE ESTA BIEN SON LOS SAMPLES TOTALES");
 			
 		}
+		
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	public void compressDirectoryBasicLHE()
+	{
+		
+		System.out.println("you have entered into Basic-LHE");
+		System.out.println ("Enter directory [default=./img]:");
+		String directory =  readKeyboard();
+		if (directory.equals("")) directory=new String("./img");
+		System.out.println ("your directory is : "+directory);
+	
+		
+		File file = new File(directory);
+        if (!file.exists()) {
+            System.out.println("El directorio no existe");
+            System.exit(0);
+        }
+        
+        String [] images = file.list();
+        
+		String path;
+		
+		for (int i=0; i<images.length; i++) {	
+			path = directory + "/" + images[i];
+			System.out.println("IMAGE "+ path );
+
+			FrameCompressor fc=new LHE.FrameCompressor(1);
+			fc.image_name = images[i].split("\\.")[0];
+			fc.DEBUG=true;
+			fc.loadFrame(path);
+			
+			String option = "1";
+			fc.compressBasicFrame(option,path);
+		}
+	}
+
 		
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	public void compressImageBasicLHE()

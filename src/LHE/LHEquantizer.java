@@ -1381,6 +1381,7 @@ System.exit(0);
 					float error_center=0;
 					float error_avg=0;
 					
+					
 					for (int y=0;y<img.height;y++)  {
 						for (int x=0;x<img.width;x++)  {
 
@@ -1389,8 +1390,15 @@ System.exit(0);
 							//prediction of signal (hop0) , based on pixel's coordinates 
 							//----------------------------------------------------------
 							if ((y>0) &&(x>0) && x!=img.width-1){
+								int A = result_YUV[pix-1];
+								int B = result_YUV[pix-1-img.width];
+								int C = result_YUV[pix-img.width];
+								int D = result_YUV[pix+1-img.width];
+								
+								//hop0=(int)(0.97f*A);
+								//hop0 = (A + B + C)/3;
 								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-								//hop0=(result_YUV[pix-1]+result_YUV[pix+1-img.width])/2;
+
 								//hop0=result_YUV[pix+1-img.width];
 								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
 							}
@@ -1412,52 +1420,17 @@ System.exit(0);
 								hop0=oc;//first pixel always is perfectly predicted! :-)  
 							}	
 							
-
-							//paeth
-							/*
-							int A=0;
-							int B=0;
-							int C=0;
-							if (x>0) A=result_YUV[pix-1];
-							if (y>0) B=result_YUV[pix-img.width];
-							if (x>0 && y>0) C=result_YUV[pix-img.width-1];
-							if (x==0) {A=B;C=B;}
-							if (y==0) {B=A;C=A;}
-							if (x==0 && y==0)hop0=oc;
-							else
-							{
-								int pred=A+B-C;
-								int a1=Math.abs(A-pred);
-								int b1=Math.abs(B-pred);
-								int c1=Math.abs(C-pred);
-								if (a1<=b1 && a1<=c1) hop0=A;
-								else if (b1<=a1 && b1<=c1) hop0=B;
-								else hop0=C;
-								//System.out.println("paeth");
-							}
-							*/
-							
 							
 
 							//hops computation. initial values for errors
 							emin=256;//current minimum prediction error 
 							int e2=0;//computed error for each hop 
 
-							//hop0 is prediction
-							//if (hop0>255)hop0=255;
-							//else if (hop0<0) hop0=0; 
-
-							//max_hop1=16;//(int)((float)hop0 *0.02f +0.5f);
-							//System.out.println("hop1max:"+max_hop1);
 							//positive hops computation
 							//-------------------------
 							int rmax=25;//40;
 							rmax=27;
-							//hop1=8;
-							
-							//min_hop1=(int)(0.5f+(float)hop0*0.04f);//no puede ser cero
-							//if (min_hop1<4) min_hop1=4;
-							//if (hop1<min_hop1) hop1=min_hop1;
+
 							
 							if (oc-hop0>=0) 
 							{
@@ -1481,15 +1454,7 @@ System.exit(0);
 							//-------------------------
 							else 
 							{
-								//	System.out.println("x:"+x+" y:"+y+"   hop0:"+hop0);
-								//if (cf3[hop1][hop0][4]-oc<=emin) {hop_number=8;emin=cf3[hop1][hop0][4]-oc;}
 								for (int j=4;j>=0;j--) {
-								//	for (int j=4;j>=3;j--) {
-									//if (j==4) rmax=20;
-								    //if (j==3) rmax=20;
-							        //if (j==2) rmax=25;
-									//if (j==1) rmax=28;
-									//if (j==0) rmax=30;
 									
 									e2=pccr[hop1][hop0][rmax][j]-oc;
 									if (e2<0) e2=-e2;
@@ -1498,10 +1463,8 @@ System.exit(0);
 									            }
 									else break;
 								}
-							}
-//System.out.println("hola");
-							//29/12/2014
-							
+							}			
+										
 							
 							//colin
 							
@@ -1525,21 +1488,11 @@ System.exit(0);
 							for (int j=1; j<endcolin;j++)
 							{	colin[j]=(int)(-0.5f+(((float)pccr[hop1][hop0i][rmax][j-1]+(float)pccr[hop1][hop0i][rmax][j])/2f+((float)pccr[hop1][hop0i][rmax][j]+(float)pccr[hop1][hop0i][rmax][j+1])/2f)/2f);
 						    }
-							
-							
-							
-							
-							
-							
 						
 							
 							//assignment of final color value
 							//--------------------------------
 							result_YUV[pix]=pccr[hop1][hop0][25][hop_number];
-							//result_YUV[pix]=colin[hop_number];//pccr[hop1][hop0][25][hop_number];
-							
-							//if (result_YUV[pix]==0) result_YUV[pix]=1;// esto ya se hace en init
-							//	System.out.println(" result:"+result_YUV[pix]+"    hop"+hop_number);
 							hops[pix]=hop_number; //Le sumo 1 porque el original no usa 0
 							
 							//METRICS
