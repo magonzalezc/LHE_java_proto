@@ -1364,8 +1364,8 @@ System.exit(0);
 					//img.height=429;
 					//img.width=576;
 					//img.height=256;
-					int max_hop1=10;//10;//8;//8;//16;//8;// hop1 interval 4..8
-					int min_hop1=6;//4;//4;// 
+					int max_hop1=13;//10;//10;//8;//8;//16;//8;// hop1 interval 4..8
+					int min_hop1=8;//6;//4;//4;// 
 					int start_hop1=(max_hop1+min_hop1)/2;
 					
 					
@@ -1397,8 +1397,9 @@ System.exit(0);
 								
 								//hop0=(int)(0.97f*A);
 								//hop0 = (A + B + C)/3;
-								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-
+								//hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+								hop0 = (A+D)/2;
+								//hop0 = A;
 								//hop0=result_YUV[pix+1-img.width];
 								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
 							}
@@ -3997,15 +3998,20 @@ public void initPreComputations()
 
 			// COMPUTATION OF LUMINANCES:
 			float offset = 0;
+			
+			int step2 = 32;
+			int step3 = 55;
+			int step4 = 70;
+			
 			// luminance of possitive hops
-			h6[hop1][hop0] = hop1*ratio_pos;
-			h7[hop1][hop0] = h6[hop1][hop0]*ratio_pos;
-			h8[hop1][hop0] = h7[hop1][hop0]*(ratio_pos+offset);
+			h6[hop1][hop0] = step2;//hop1*ratio_pos;
+			h7[hop1][hop0] = step3; //h6[hop1][hop0]*ratio_pos;
+			h8[hop1][hop0] = step4; //h7[hop1][hop0]*(ratio_pos+offset);
 
 			//luminance of negative hops	                        
-			h2[hop1][hop0] =hop1*ratio_neg;
-			h1[hop1][hop0] = h2[hop1][hop0]*ratio_neg;
-			h0[hop1][hop0] = h1[hop1][hop0]*(ratio_neg+offset);
+			h2[hop1][hop0] = step2; //hop1*ratio_neg;
+			h1[hop1][hop0] = step3; //h2[hop1][hop0]*ratio_neg;
+			h0[hop1][hop0] = step4; //h1[hop1][hop0]*(ratio_neg+offset);
 
 			
 			//final color component ( luminance or chrominance). depends on hop1
