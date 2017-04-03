@@ -35,6 +35,19 @@ public class LHEquantizer {
 	int LHE2_resta=0;
 	
 	//********************************************************************************************
+	public LHEquantizer(int k0, int k1, int k2, int k6, int k7, int k8, 
+			int offset0, int offset1, int offset2, int offset6, int offset7, int offset8)
+	{
+		//at LHEquantizer creation, the precomputations are done
+		//if (pccr==null) initGeomR();
+		
+		if (pccr==null)initPreComputationsVariable(k0, k1, k2, k6, k7, k8, 
+				offset0, offset1, offset2, offset6, offset7, offset8);
+	}
+	
+	//*********************************************************************************************
+	
+	//********************************************************************************************
 	public LHEquantizer()
 	{
 		//at LHEquantizer creation, the precomputations are done
@@ -1364,8 +1377,8 @@ System.exit(0);
 					//img.height=429;
 					//img.width=576;
 					//img.height=256;
-					int max_hop1=13;//10;//10;//8;//8;//16;//8;// hop1 interval 4..8
-					int min_hop1=8;//6;//4;//4;// 
+					int max_hop1=10;//10;//10;//8;//8;//16;//8;// hop1 interval 4..8
+					int min_hop1=6;//6;//4;//4;// 
 					int start_hop1=(max_hop1+min_hop1)/2;
 					
 					
@@ -1397,8 +1410,8 @@ System.exit(0);
 								
 								//hop0=(int)(0.97f*A);
 								//hop0 = (A + B + C)/3;
-								//hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
-								hop0 = (A+D)/2;
+								hop0=(4*result_YUV[pix-1]+3*result_YUV[pix+1-img.width])/7;	
+								//hop0 = (A+D)/2;
 								//hop0 = A;
 								//hop0=result_YUV[pix+1-img.width];
 								//	System.out.println(" result_YUV[pix-1]:"+result_YUV[pix-1]+"  result_YUV[pix+1-img.width]: "+result_YUV[pix+1-img.width]);
@@ -3908,6 +3921,97 @@ public void quantizeDownsampledBlock_R4(Block b, int[] hops,int[] result_YUV, in
 }//end function
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+public void initPreComputationsVariable(int k0, int k1, int k2, int k6, int k7, int k8, 
+										int offset0, int offset1, int offset2, int offset6, int offset7, int offset8)
+{
+	//This is the function to initialize pre-computed hop values
+	System.out.println(" initializing LHE pre-computed hops");
+	
+	// This is a cache of ratio ("r") to avoid pow functions
+	float[][][][] cache_ratio; //meaning : [+/-][h1][h0][rmax]
+	// we will compute cache ratio for different rmax values, although we will use 
+	// finally only rmax=25 (which means 2.5f). This function is generic and experimental
+	// and this is the cause to compute more things than needed.
+	
+	// h1 value belongs to [4..10]
+	// Given a certain h1 value, and certaing h0 luminance, the "luminance hop" of hop "i" is stored here:
+	// hn[absolute h1 value][luminance of h0 value]
+	// for example,  h4 (null hop) is always 0, h1 is always hop1 (from 4 to 10), h2 is hop1*r,
+	// however this is only the hop. the final luminance of h2 is luminace=(luminance of h0)+hop1*r    
+	// hn is, therefore, the array of "hops" in terms of luminance but not the final luminances.
+	float[][] h0,h1,h2,h6,h7,h8;// h0,h1,h2 are negative hops. h6,h7,h8 are possitive hops
+	
+	int h1range=20;//in fact h1range is only from 4 to 10. However i am going to fill more possible values in the pre-computed hops
+	
+	
+	h0=new float[h1range][256];
+	h1=new float[h1range][256];
+	h2=new float[h1range][256];
+	// in the center is located h3=h4-hop1, and h5=h4+hop1, but I dont need array for them
+	h6=new float[h1range][256];
+	h7=new float[h1range][256];
+	h8=new float[h1range][256];
+	
+	
+	// pccr is the value of the REAL cache. This is the cache to be used in the LHE quantizer
+	// sorry...i dont remenber why this cache is named "pccr" :) instead of "cache"
+	// this array takes into account the ratio
+	// meaning: pccr [h1][luminance][ratio][hop_index]
+	pccr=new int[h1range][256][50][9];
+	
+	//cache of ratios ( to avoid Math.pow operation)
+	//---------------------------------------------
+	cache_ratio=new float[2][h1range][256][50];
+	
+	
+	for (int hop0=0;hop0<=255;hop0++) {
+		
+		//assignment of precomputed hop values, for each ofp value
+		//--------------------------------------------------------
+		for (int hop1=1;hop1<h1range;hop1++)
+		{
+			//finally we will only use one value of rmax rmax=30, 
+			//however we compute from r=2.0f (rmax=20) to r=4.0f (rmax=40)
+			for (int rmax=20;rmax<=40;rmax++)
+			{
+			
+			// luminance of possitive hops
+			h6[hop1][hop0] = (hop1+offset6)*k6;
+			h7[hop1][hop0] = (h6[hop1][hop0]+offset7)*k7;
+			h8[hop1][hop0] = (h7[hop1][hop0]+offset8)*k8;
+
+			//luminance of negative hops	                        
+			h2[hop1][hop0] = (hop1+offset2)*k2;
+			h1[hop1][hop0] = (h2[hop1][hop0]+offset1)*k1;
+			h0[hop1][hop0] = (h1[hop1][hop0]+offset0)*k0;
+
+			
+			//final color component ( luminance or chrominance). depends on hop1
+			//from most negative hop (pccr[hop1][hop0][0]) to most possitive hop (pccr[hop1][hop0][8])
+			//--------------------------------------------------------------------------------------
+			pccr[hop1][hop0][rmax][0]= hop0  - (int) h0[hop1][hop0] ; if (pccr[hop1][hop0][rmax][0]<=0) { pccr[hop1][hop0][rmax][0]=1;}
+			pccr[hop1][hop0][rmax][1]= hop0  - (int) h1[hop1][hop0]; if (pccr[hop1][hop0][rmax][1]<=0) {pccr[hop1][hop0][rmax][1]=1;}
+			pccr[hop1][hop0][rmax][2]= hop0  - (int) h2[hop1][hop0]; if (pccr[hop1][hop0][rmax][2]<=0) { pccr[hop1][hop0][rmax][2]=1;}
+			pccr[hop1][hop0][rmax][3]=hop0-hop1;if (pccr[hop1][hop0][rmax][3]<=0) pccr[hop1][hop0][rmax][3]=1;
+			pccr[hop1][hop0][rmax][4]=hop0; //null hop
+			
+			  //check of null hop value. This control is used in "LHE advanced", where value of zero is forbidden
+			  //in basic LHE there is no need for this control
+			  if (pccr[hop1][hop0][rmax][4]<=0) pccr[hop1][hop0][rmax][4]=1; //null hop
+			  if (pccr[hop1][hop0][rmax][4]>255) pccr[hop1][hop0][rmax][4]=255;//null hop
+			
+			pccr[hop1][hop0][rmax][5]= hop0+hop1;if (pccr[hop1][hop0][rmax][5]>255) pccr[hop1][hop0][rmax][5]=255;
+			pccr[hop1][hop0][rmax][6]= hop0  + (int) h6[hop1][hop0]; if (pccr[hop1][hop0][rmax][6]>255) {pccr[hop1][hop0][rmax][6]=255;}
+			pccr[hop1][hop0][rmax][7]= hop0  + (int) h7[hop1][hop0]; if (pccr[hop1][hop0][rmax][7]>255) {pccr[hop1][hop0][rmax][7]=255;}
+			pccr[hop1][hop0][rmax][8]= hop0  + (int) h8[hop1][hop0]; if (pccr[hop1][hop0][rmax][8]>255) {pccr[hop1][hop0][rmax][8]=255;}
+			
+			}//rmax
+		}
+	}//hop0
+}
+	
+	
 public void initPreComputations()
 {
 	//This is the function to initialize pre-computed hop values
@@ -4004,14 +4108,14 @@ public void initPreComputations()
 			int step4 = 70;
 			
 			// luminance of possitive hops
-			h6[hop1][hop0] = step2;//hop1*ratio_pos;
-			h7[hop1][hop0] = step3; //h6[hop1][hop0]*ratio_pos;
-			h8[hop1][hop0] = step4; //h7[hop1][hop0]*(ratio_pos+offset);
+			h6[hop1][hop0] = hop1*ratio_pos;
+			h7[hop1][hop0] = h6[hop1][hop0]*ratio_pos;
+			h8[hop1][hop0] = h7[hop1][hop0]*(ratio_pos+offset);
 
 			//luminance of negative hops	                        
-			h2[hop1][hop0] = step2; //hop1*ratio_neg;
-			h1[hop1][hop0] = step3; //h2[hop1][hop0]*ratio_neg;
-			h0[hop1][hop0] = step4; //h1[hop1][hop0]*(ratio_neg+offset);
+			h2[hop1][hop0] = hop1*ratio_neg;
+			h1[hop1][hop0] = h2[hop1][hop0]*ratio_neg;
+			h0[hop1][hop0] = h1[hop1][hop0]*(ratio_neg+offset);
 
 			
 			//final color component ( luminance or chrominance). depends on hop1

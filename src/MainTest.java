@@ -46,6 +46,7 @@ public class MainTest {
 	System.out.println ("7) interpolate seams");
 	System.out.println ("8) compress LHE2");
 	System.out.println ("9) compress a directory using Basic-LHE (bit-rate non elegible)");
+	System.out.println ("10) compress variable quantizer using Basic-LHE (bit-rate non elegible)");
 
 	
 	String option =  readKeyboard();
@@ -64,6 +65,7 @@ public class MainTest {
 	else if (option.equals("7")) m.interpolateSeams();
 	else if (option.equals("8")) m.compressImageLHE2();
 	else if (option.equals("9")) m.compressDirectoryBasicLHE();
+	else if (option.equals("10")) m.compressImageBasicLHEVariable();
 
 	}
 	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -139,6 +141,95 @@ public class MainTest {
 			String option = "1";
 			fc.compressBasicFrame(option,path);
 		}
+	}
+	
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	public void compressImageBasicLHEVariable()
+	{
+		float result[];
+		System.out.println("you have enter into Basic-LHE Variable");
+		System.out.println ("Enter filename [default=./img/lena.bmp]:");
+		String filename =  readKeyboard();
+		if (filename.equals("")) filename=new String("./img/lena.bmp");
+		System.out.println ("your filename is : "+filename);
+		
+		int max = 5;
+		int max_offset=5;
+		int max_k0 = max;
+		int max_k1 = max;
+		int max_k2 = max;
+		int max_k6 = max;
+		int max_k7 = max;
+		int max_k8 = max;
+		int max_offset0 = max_offset;
+		int max_offset1 = max_offset;
+		int max_offset2 = max_offset;
+		int max_offset6 = max_offset;
+		int max_offset7 = max_offset;
+		int max_offset8 = max_offset;
+		
+		float [] global_result = new float [2];
+		global_result[0] = -1;
+		global_result[1] = -1;
+		int [] configuration = new int [12];
+		
+		for (int k0=0; k0<max_k0; k0++) {
+			for (int k1=0; k1<max_k1; k1++) {
+				for (int k2=0; k2<max_k2; k2++) {
+					for (int k6=0; k6<max_k6; k6++) {
+						for (int k7=0; k7<max_k7; k7++) {
+							for (int k8=0; k8<max_k8; k8++) {
+								for (int offset0=0; offset0<max_offset0; offset0++) {
+									for (int offset1=0; offset1<max_offset1; offset1++) {
+										for (int offset2=0; offset2<max_offset2; offset2++) {
+											for (int offset6=0; offset6<max_offset6; offset6++) {
+												for (int offset7=0; offset7<max_offset7; offset7++) {
+													for (int offset8=0; offset8<max_offset8; offset8++) {
+														
+														FrameCompressor fc=new LHE.FrameCompressor(k0, k1, k2, k6, k7, k8, 
+																offset0, offset1, offset2, offset6, offset7, offset8);
+														fc.DEBUG=true;
+														fc.loadFrame(filename);
+															
+														String option="1";
+														result = fc.compressBasicFrame(option,filename);
+						
+														System.out.println("global_result " + global_result[0] + " result " + result[0]);
+														if (result[0] > global_result[0]) {
+															global_result[0] = result[0];
+															global_result[1] = result[1];
+															configuration[0] = k0;
+															configuration[1] = k1;
+															configuration[2] = k2;
+															configuration[3] = k6;
+															configuration[4] = k7;
+															configuration[5] = k8;
+															configuration[6] = offset0;
+															configuration[7] = offset1;
+															configuration[8] = offset2;
+															configuration[9] = offset6;
+															configuration[10] = offset7;
+															configuration[11] = offset8;
+														} 
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}	
+		
+		System.out.println(" FINAL RESULT IS psnr:"+global_result[0] + " bpp " + global_result[1]);
+		System.out.println(" CONFIGURATION IS k0:"+ configuration[0] + " k1: " + configuration[1] + " k2: " + configuration[2]
+				+ " k6: " + configuration[3] + " k7: " + configuration[4] + " k8 " + configuration[5]
+				+ " offset0: " + configuration[6] + " offset1: " + configuration[7] + " offset2 " + configuration[8]
+				+ " offset6: " + configuration[9] + " offset7: " + configuration[10] + " offset8: " + configuration[11]);
+
 	}
 
 		

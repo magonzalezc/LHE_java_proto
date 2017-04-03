@@ -34,6 +34,20 @@ private int number_of_threads=1;//for parallel processing. default is 1
 public boolean LHE=true;
 
 public String downmode="NORMAL";
+
+//*****************************************************************
+public FrameCompressor(int k0, int k1, int k2, int k6, int k7, int k8, 
+		int offset0, int offset1, int offset2, int offset6, int offset7, int offset8)
+{
+	//constructor
+	this.number_of_threads=1;
+	img=new ImgUtil();
+	grid = new Grid();
+	lhe=new LHEquantizer(k0, k1, k2, k6, k7, k8, 
+			offset0, offset1, offset2, offset6, offset7, offset8);
+	
+}
+//******************************************************************
 //*****************************************************************
 public FrameCompressor(int number_of_threads)
 {
