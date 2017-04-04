@@ -152,15 +152,34 @@ public class MainTest {
 		String filename =  readKeyboard();
 		if (filename.equals("")) filename=new String("./img/lena.bmp");
 		System.out.println ("your filename is : "+filename);
+
+		int min = 1;
+		int max = 21;
 		
-		int max = 5;
-		int max_offset=5;
+		int min_offset = 0;
+		int max_offset= 10;
+		
+		int min_k0 = min;
+		int min_k1 = min;
+		int min_k2 = min;
+		int min_k6 = min;
+		int min_k7 = min;
+		int min_k8 = min;
+		
 		int max_k0 = max;
 		int max_k1 = max;
 		int max_k2 = max;
 		int max_k6 = max;
 		int max_k7 = max;
 		int max_k8 = max;
+		
+		int min_offset0 = min_offset;
+		int min_offset1 = min_offset;
+		int min_offset2 = min_offset;
+		int min_offset6 = min_offset;
+		int min_offset7 = min_offset;
+		int min_offset8 = min_offset;
+		
 		int max_offset0 = max_offset;
 		int max_offset1 = max_offset;
 		int max_offset2 = max_offset;
@@ -170,32 +189,67 @@ public class MainTest {
 		
 		float [] global_result = new float [2];
 		global_result[0] = -1;
-		global_result[1] = -1;
+		global_result[1] = 100;
 		int [] configuration = new int [12];
+		int total_iteraciones = max_k0*max_k1*max_k2*max_k6*max_k7*max_k8*max_offset0*max_offset1*max_offset2*max_offset6*max_offset7*max_offset8;
+		int iteraciones = 0;
 		
-		for (int k0=0; k0<max_k0; k0++) {
-			for (int k1=0; k1<max_k1; k1++) {
-				for (int k2=0; k2<max_k2; k2++) {
-					for (int k6=0; k6<max_k6; k6++) {
-						for (int k7=0; k7<max_k7; k7++) {
-							for (int k8=0; k8<max_k8; k8++) {
-								for (int offset0=0; offset0<max_offset0; offset0++) {
-									for (int offset1=0; offset1<max_offset1; offset1++) {
-										for (int offset2=0; offset2<max_offset2; offset2++) {
-											for (int offset6=0; offset6<max_offset6; offset6++) {
-												for (int offset7=0; offset7<max_offset7; offset7++) {
-													for (int offset8=0; offset8<max_offset8; offset8++) {
+		int k0 = 0;
+		int k1 = 0;
+		int k2 = 0;
+		int k6 = 0;
+		int k7 = 0;
+		int k8 = 0;
+		int offset0 = 0;
+		int offset1 = 0;
+		int offset2 = 0;
+		int offset6 = 0;
+		int offset7 = 0;
+		int offset8 = 0;
+		
+		total_iteraciones = (max_k0-min_k0)*(max_k1-min_k1)*(max_offset0-min_offset0)*(max_offset1-min_offset1);
+		
+		for (k0=min_k0; k0<max_k0; k0++) 
+			for (k1=min_k1; k1<max_k1; k1++) 
+				//for (k2=min_k2; k2<max_k2; k2++) 
+					//for (k6=min_k6; k6<max_k6; k6++) {
+						//for (k7=min_k7; k7<max_k7; k7++) 
+							//for (k8=min_k8; k8<max_k8; k8++) 
+								for (offset0=min_offset0; offset0<max_offset0; offset0++) 
+									for (offset1=min_offset1; offset1<max_offset1; offset1++) {
+										//for (offset2=min_offset2; offset2<max_offset2; offset2++) 
+											//for (offset6=min_offset6; offset6<max_offset6; offset6++) 
+												//for (offset7=min_offset7; offset7<max_offset7; offset7++) 
+													//for (offset8=min_offset8; offset8<max_offset8; offset8++) {
+									
+														//k1 = k0;
+														//k2 = k0;
+														//k7 = k6;
+														//k8 = k6;
+														
+										/*
+														System.out.println("k0:"+ k0 + " k1: " + k1 + " k2: " + k2
+																+ " k6: " + k6 + " k7: " + k7 + " k8 " + k8
+																+ " offset0: " + offset0 + " offset1: " + offset1 + " offset2 " + offset2
+																+ " offset6: " + offset6 + " offset7: " + offset7 + " offset8: " + offset8);
+																*/
+										
+										/*
+														System.out.println("k0: "+ k0 + " k1: " + k1 
+																+ " offset0: " + offset0 + " offset1: " + offset1);
+											*/			
 														
 														FrameCompressor fc=new LHE.FrameCompressor(k0, k1, k2, k6, k7, k8, 
 																offset0, offset1, offset2, offset6, offset7, offset8);
-														fc.DEBUG=true;
+														fc.DEBUG=false;
 														fc.loadFrame(filename);
 															
 														String option="1";
 														result = fc.compressBasicFrame(option,filename);
 						
-														System.out.println("global_result " + global_result[0] + " result " + result[0]);
-														if (result[0] > global_result[0]) {
+														//System.out.println("global_result " + global_result[0] + " result " + result[0] + "result[1] " + result[1] + " global_result " + global_result[1]);
+														
+														if (result[0] > global_result[0]) {														
 															global_result[0] = result[0];
 															global_result[1] = result[1];
 															configuration[0] = k0;
@@ -210,19 +264,30 @@ public class MainTest {
 															configuration[9] = offset6;
 															configuration[10] = offset7;
 															configuration[11] = offset8;
-														} 
+														} else if (result[0] == global_result[0]) {
+															if (result[1] <= global_result[1]) {
+																global_result[0] = result[0];
+																global_result[1] = result[1];
+																configuration[0] = k0;
+																configuration[1] = k1;
+																configuration[2] = k2;
+																configuration[3] = k6;
+																configuration[4] = k7;
+																configuration[5] = k8;
+																configuration[6] = offset0;
+																configuration[7] = offset1;
+																configuration[8] = offset2;
+																configuration[9] = offset6;
+																configuration[10] = offset7;
+																configuration[11] = offset8;
+															}
+														}
+														
+														iteraciones++;
+														System.out.println("ITERACION: " + iteraciones + " DE UN TOTAL DE ITERACIONES:" + total_iteraciones);
 													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}	
+												
+	
 		
 		System.out.println(" FINAL RESULT IS psnr:"+global_result[0] + " bpp " + global_result[1]);
 		System.out.println(" CONFIGURATION IS k0:"+ configuration[0] + " k1: " + configuration[1] + " k2: " + configuration[2]
@@ -661,7 +726,7 @@ public class MainTest {
 		//ImgUtil img=new ImgUtil();
 		
 		//for each file
-		//primero pasamos el file a yuvbnç
+		//primero pasamos el file a yuvbnï¿½
 		String[] rows=new String[ficherosEnDirectorio.length];//resultado
 		String[] rowssim=new String[ficherosEnDirectorio.length];//resultado
 		for (int i=0;i<ficherosEnDirectorio.length;i++)
@@ -773,7 +838,7 @@ public class MainTest {
 			//ImgUtil img=new ImgUtil();
 			
 			//for each file
-			//primero pasamos el file a yuvbnç
+			//primero pasamos el file a yuvbnï¿½
 			String[] rows=new String[ficherosEnDirectorio.length];//resultado
 			String[] rowssim=new String[ficherosEnDirectorio.length];//resultado
 			
@@ -965,7 +1030,7 @@ public class MainTest {
 			//ImgUtil img=new ImgUtil();
 			
 			//for each file
-			//primero pasamos el file a yuvbnç
+			//primero pasamos el file a yuvbnï¿½
 			//String[] rows=new String[ficherosEnDirectorio.length];//resultado
 			String[] rowssim=new String[ficherosEnDirectorio.length];//resultado
 			

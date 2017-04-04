@@ -65,7 +65,7 @@ public void loadFrame( String path_img)
 	lhe.img=img;
 	img.BMPtoYUV(path_img);
 	
-	//si modifico aqui el tamaño puedo probar con diferentes tamaños de imagen para hacer down
+	//si modifico aqui el tamaï¿½o puedo probar con diferentes tamaï¿½os de imagen para hacer down
 	//y asi evaluar rendimientos
 	//img.width=256;
 	//img.height=256;
@@ -191,7 +191,7 @@ public float[] compressBasicFrame(String optionratio)
 	// de los simbolos. es decir, cuantos hay de cada y con huffman se hace
 	be.hopsToBits_v3(img.hops[0],0,0, img.width-1,img.height-1,0,0);
 	
-	be.saveSymbolsToTxt("./output_debug/Symbols1stLHE.txt");
+	if (DEBUG) be.saveSymbolsToTxt("./output_debug/Symbols1stLHE.txt");
 	
 	
 	//convert symbols into bits...
@@ -203,10 +203,11 @@ public float[] compressBasicFrame(String optionratio)
 	int lenbin=huff.getLenTranslateCodes(be.down_stats_saco[0]);
 	
 	//METRICS
-	if (image_name!= null) 
-		img.saveMetricsToCsv("./metrics/pred3_"+image_name+".csv");
-	else
-		img.saveMetricsToCsv("./metrics/metrics.csv");
+	if (DEBUG)
+		if (image_name!= null) 
+			img.saveMetricsToCsv("./metrics/pred3_"+image_name+".csv");
+		else
+			img.saveMetricsToCsv("./metrics/metrics.csv");
 
 	System.out.println("total_hops: "+be.totalhops);
 	System.out.println("image_bits: "+lenbin+ "   bpp:"+((float)lenbin/(img.width*img.height)));
