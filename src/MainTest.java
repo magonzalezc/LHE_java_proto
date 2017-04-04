@@ -154,44 +154,45 @@ public class MainTest {
 		System.out.println ("your filename is : "+filename);
 
 		int min = 1;
-		int max = 21;
+		int max = 55;
 		
 		int min_offset = 0;
 		int max_offset= 10;
 		
 		int min_k0 = min;
 		int min_k1 = min;
-		int min_k2 = min;
-		int min_k6 = min;
-		int min_k7 = min;
-		int min_k8 = min;
+		int min_k2 = 0;
+		int min_k6 = 0;
+		int min_k7 = 0;
+		int min_k8 = 0;
 		
 		int max_k0 = max;
 		int max_k1 = max;
-		int max_k2 = max;
-		int max_k6 = max;
-		int max_k7 = max;
-		int max_k8 = max;
+		int max_k2 = 1;
+		int max_k6 = 1;
+		int max_k7 = 1;
+		int max_k8 = 1;
 		
 		int min_offset0 = min_offset;
 		int min_offset1 = min_offset;
-		int min_offset2 = min_offset;
-		int min_offset6 = min_offset;
-		int min_offset7 = min_offset;
-		int min_offset8 = min_offset;
+		int min_offset2 = 0;
+		int min_offset6 = 0;
+		int min_offset7 = 0;
+		int min_offset8 = 0;
 		
 		int max_offset0 = max_offset;
 		int max_offset1 = max_offset;
-		int max_offset2 = max_offset;
-		int max_offset6 = max_offset;
-		int max_offset7 = max_offset;
-		int max_offset8 = max_offset;
+		int max_offset2 = 1;
+		int max_offset6 = 1;
+		int max_offset7 = 1;
+		int max_offset8 = 1;
 		
 		float [] global_result = new float [2];
 		global_result[0] = -1;
 		global_result[1] = 100;
 		int [] configuration = new int [12];
-		int total_iteraciones = max_k0*max_k1*max_k2*max_k6*max_k7*max_k8*max_offset0*max_offset1*max_offset2*max_offset6*max_offset7*max_offset8;
+		int total_iteraciones = (max_k0-min_k0)*(max_k1-min_k1)*(max_k2-min_k2)*(max_k6-min_k6)*(max_k7-min_k7)*(max_k8-min_k8)
+				*(max_offset0-min_offset0)*(max_offset1-min_offset1)*(max_offset2-min_offset2)*(max_offset6-min_offset6)*(max_offset7-min_offset7)*(max_offset8-min_offset8);
 		int iteraciones = 0;
 		
 		int k0 = 0;
@@ -206,21 +207,20 @@ public class MainTest {
 		int offset6 = 0;
 		int offset7 = 0;
 		int offset8 = 0;
-		
-		total_iteraciones = (max_k0-min_k0)*(max_k1-min_k1)*(max_offset0-min_offset0)*(max_offset1-min_offset1);
+				
 		
 		for (k0=min_k0; k0<max_k0; k0++) 
 			for (k1=min_k1; k1<max_k1; k1++) 
-				//for (k2=min_k2; k2<max_k2; k2++) 
-					//for (k6=min_k6; k6<max_k6; k6++) {
-						//for (k7=min_k7; k7<max_k7; k7++) 
-							//for (k8=min_k8; k8<max_k8; k8++) 
+				for (k2=min_k2; k2<max_k2; k2++) 
+					for (k6=min_k6; k6<max_k6; k6++) 
+						for (k7=min_k7; k7<max_k7; k7++) 
+							for (k8=min_k8; k8<max_k8; k8++) 
 								for (offset0=min_offset0; offset0<max_offset0; offset0++) 
-									for (offset1=min_offset1; offset1<max_offset1; offset1++) {
-										//for (offset2=min_offset2; offset2<max_offset2; offset2++) 
-											//for (offset6=min_offset6; offset6<max_offset6; offset6++) 
-												//for (offset7=min_offset7; offset7<max_offset7; offset7++) 
-													//for (offset8=min_offset8; offset8<max_offset8; offset8++) {
+									for (offset1=min_offset1; offset1<max_offset1; offset1++) 
+										for (offset2=min_offset2; offset2<max_offset2; offset2++) 
+											for (offset6=min_offset6; offset6<max_offset6; offset6++) 
+												for (offset7=min_offset7; offset7<max_offset7; offset7++) 
+													for (offset8=min_offset8; offset8<max_offset8; offset8++) {
 									
 														//k1 = k0;
 														//k2 = k0;
@@ -233,14 +233,12 @@ public class MainTest {
 																+ " offset0: " + offset0 + " offset1: " + offset1 + " offset2 " + offset2
 																+ " offset6: " + offset6 + " offset7: " + offset7 + " offset8: " + offset8);
 																*/
-										
-										/*
-														System.out.println("k0: "+ k0 + " k1: " + k1 
-																+ " offset0: " + offset0 + " offset1: " + offset1);
-											*/			
-														
+														/*
 														FrameCompressor fc=new LHE.FrameCompressor(k0, k1, k2, k6, k7, k8, 
 																offset0, offset1, offset2, offset6, offset7, offset8);
+																*/
+														
+														FrameCompressor fc=new LHE.FrameCompressor(k0, k1, offset0, offset1);
 														fc.DEBUG=false;
 														fc.loadFrame(filename);
 															

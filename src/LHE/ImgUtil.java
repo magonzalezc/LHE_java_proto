@@ -20,6 +20,8 @@ public class ImgUtil {
 	int[] error_count;
 	int[] maximum_error;
 	int[] mean_square;
+	int[][][] ratio_count;
+	int[][] sign_count;
 
 
 	int [][] SOLY2;
@@ -133,7 +135,8 @@ public class ImgUtil {
 		error_count = new int[9];
 		maximum_error = new int[9];
 		mean_square = new int[9];
-		
+		ratio_count = new int[2][256][100];
+		sign_count = new int[2][256];
 	}
 //copy constructor
 	//******************************************************************************
@@ -559,6 +562,29 @@ height=orig.height;
 			for (int i=0;i<mean_square.length;i++){	
 				d.writeBytes(i + ";" + mean_square[i] + "\n");			
 			}
+			
+			d.writeBytes("PREDICCION; POSITIVE HOPS \n");		
+			for (int i=0; i<256; i++) {
+				d.writeBytes(i +  ";" + sign_count[0][i] + "\n");			
+			}
+			
+			d.writeBytes("NEGATIVE HOPS \n");			
+			for (int i=0; i<256; i++) {
+				d.writeBytes(i + ";" + sign_count[1][i] + "\n");			
+			}
+			
+			d.writeBytes("POSITIVE RATIOS \n");		
+			for (int i=0; i<256; i++)
+				for (int j=0;j<100;j++){	
+				
+				d.writeBytes(i + ";" + j + ";" + ratio_count[0][i][j] + "\n");			
+			}
+			
+			d.writeBytes("NEGATIVE RATIOS \n");			
+			for (int i=0; i<256; i++)
+				for (int j=0;j<100;j++){	
+					d.writeBytes(i + ";" + j + ";" + ratio_count[1][i][j] + "\n");			
+				}
 
 			d.close();
 		}catch(Exception e){System.out.println("ERROR writing histogram in csv format:"+e);}	
@@ -3124,7 +3150,7 @@ public void computeY2fromDeltaY1pY1ppV2(int[][] delta_interpol,int[][] y1PP, int
 				{
 					y2=y1p;//+dy6;//no hay cambio  Y1pp tiene  baja resolucion muy probable
 				}
-				//si la diferencia de resolucion es pequeña (y1p==y1pp) usaremos y1pp+dy6
+				//si la diferencia de resolucion es pequeï¿½a (y1p==y1pp) usaremos y1pp+dy6
 				//pero si es grande tendremos que usar otra cosa
 				else if (l<=u2) //leve cambio, quizas aumento de brillo
 					{
@@ -3384,7 +3410,7 @@ public void computeY2fromDeltaY1pY1ppV3(int[][] delta_interpol,int[][] y1PP)//, 
 					
 						if (l<=ul2)
 					{
-						//hay un cambio pequeño. puede ser :
+						//hay un cambio pequeï¿½o. puede ser :
 						//  aumento de brillo en zona detallada 
 						//  cambio de tono suave en zona suave
 						//  movimiento leve
@@ -3451,7 +3477,7 @@ public void compute_dy(int[][] frame,  int[][] frame_y1, int[] countdown)
 			    
 				//valores de min_count
 				// -1: genera estelas. un solo salto no es suficiente para restaurar el color de fondo
-				// -2. aceptable, aunque se ve leve estela. quizas con vectores de mov sería ideal
+				// -2. aceptable, aunque se ve leve estela. quizas con vectores de mov serï¿½a ideal
 				// -3: es mejor que -2 (estela no aparece) pero puede ocurrir que el tercer salto sea destructivo 
 				//     debido al fuerte down. Solo es destructivo en zonas detalladas. en fondo liso es mejor
 				// -4 : no es mejor que -3 y es algo mas destructivo

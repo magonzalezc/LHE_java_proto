@@ -1,5 +1,10 @@
 package LHE;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Locale;
+
 /*
  * 
  * hops are stored in:
@@ -29,6 +34,8 @@ public class LHEquantizer {
 	
 	static int[][][][] pccr; //precomputed color component
 	
+	int[][][][] ratio; //para estadísticas
+	
 	int contafix=0;
 	int bits_fix=0;
 	
@@ -41,9 +48,17 @@ public class LHEquantizer {
 		//at LHEquantizer creation, the precomputations are done
 		//if (pccr==null) initGeomR();
 		
-		initPreComputationsVariable_2(k0, k1, k2, k6, k7, k8, 
+		initPreComputationsVariable(k0, k1, k2, k6, k7, k8, 
 				offset0, offset1, offset2, offset6, offset7, offset8);
 	}
+	//********************************************************************************************
+		public LHEquantizer(int k0, int k1,	int offset0, int offset1)
+		{
+			//at LHEquantizer creation, the precomputations are done
+			//if (pccr==null) initGeomR();
+			
+			initPreComputationsVariable_2(k0, k1, offset0, offset1);
+		}
 	
 	//*********************************************************************************************
 	
@@ -1463,6 +1478,10 @@ System.exit(0);
 									              }
 									else break;
 								}
+								if (hop_number!=4){
+									img.ratio_count[0][hop0][ratio[0][hop1][hop0][rmax]]++;
+									img.sign_count[0][hop0]++;
+								}
 							}
 							//negative hops computation
 							//-------------------------
@@ -1477,6 +1496,9 @@ System.exit(0);
 									            }
 									else break;
 								}
+								
+								img.ratio_count[1][hop0][ratio[1][hop1][hop0][rmax]]++;
+								img.sign_count[1][hop0]++;
 							}			
 										
 							
@@ -3963,7 +3985,8 @@ public void initPreComputationsVariable(int k0, int k1, int k2, int k6, int k7, 
 	//cache of ratios ( to avoid Math.pow operation)
 	//---------------------------------------------
 	cache_ratio=new float[2][h1range][256][50];
-	
+	ratio=new int[2][h1range][256][50];
+
 	float k0_float = (float) (k0/10);
 	float k1_float = (float) (k1/10);
 	float k2_float = (float) (k2/10);
@@ -4017,8 +4040,7 @@ public void initPreComputationsVariable(int k0, int k1, int k2, int k6, int k7, 
 	}//hop0
 }
 
-public void initPreComputationsVariable_2(int k0, int k1, int k2, int k6, int k7, int k8, 
-		int offset0, int offset1, int offset2, int offset6, int offset7, int offset8)
+public void initPreComputationsVariable_2(int k0, int k1, int offset0, int offset1)
 {
 	//This is the function to initialize pre-computed hop values
 	System.out.println(" initializing LHE pre-computed hops");
@@ -4058,13 +4080,10 @@ public void initPreComputationsVariable_2(int k0, int k1, int k2, int k6, int k7
 	//cache of ratios ( to avoid Math.pow operation)
 	//---------------------------------------------
 	cache_ratio=new float[2][h1range][256][50];
-	
+	ratio=new int[2][h1range][256][50];
+
 	float k0_float = (float) (k0/10);
 	float k1_float = (float) (k1/10);
-	float k2_float = (float) (k2/10);
-	float k6_float = (float) (k6/10);
-	float k7_float = (float) (k7/10);
-	float k8_float = (float) (k8/10);
 	
 	for (int hop0=0;hop0<=255;hop0++) {
 		for (int hop1=1;hop1<h1range;hop1++)
@@ -4077,11 +4096,11 @@ public void initPreComputationsVariable_2(int k0, int k1, int k2, int k6, int k7
 			{
 				// r values for possitive hops	
 				//cache_ratio[0][(int)(hop1)][hop0][rmax]=(float)(Math.pow(percent_range*(255-hop0)/(hop1), 1f/3f) + offset0) * k0_float;
-				cache_ratio[0][(int)(hop1)][hop0][rmax]=(float)((percent_range*(255-hop0)/(hop1)) + offset0) * k0_float;
+				cache_ratio[0][(int)(hop1)][hop0][rmax]=(float)((255-hop0)/(hop1) + offset0) * k0_float;
 
 				// r' values for negative hops
 				//cache_ratio[1][(int)(hop1)][hop0][rmax]=(float)(Math.pow(percent_range*(hop0)/(hop1), 1f/3f) + offset1) * k1_float;
-				cache_ratio[1][(int)(hop1)][hop0][rmax]=(float)((percent_range*(hop0)/(hop1)) + offset1) * k1_float;
+				cache_ratio[1][(int)(hop1)][hop0][rmax]=(float)((hop0)/(hop1) + offset1) * k1_float;
 
 				// control of limits
 				float min=1.0f;
@@ -4113,15 +4132,14 @@ public void initPreComputationsVariable_2(int k0, int k1, int k2, int k6, int k7
 				float ratio_neg=cache_ratio[1][hop1][hop0][rmax];
 	
 				// luminance of possitive hops
-				h6[hop1][hop0] = (hop1+offset6)*ratio_pos;
-				h7[hop1][hop0] = (h6[hop1][hop0]+offset7)*ratio_pos;
-				h8[hop1][hop0] = (h7[hop1][hop0]+offset8)*ratio_pos;
-				
+				h6[hop1][hop0] = hop1*ratio_pos;
+				h7[hop1][hop0] = h6[hop1][hop0]*ratio_pos;
+				h8[hop1][hop0] = h7[hop1][hop0]*ratio_pos;
+
 				//luminance of negative hops	                        
-				h2[hop1][hop0] = (hop1+offset2)*ratio_neg;
-				h1[hop1][hop0] = (h2[hop1][hop0]+offset1)*ratio_neg;
-				h0[hop1][hop0] = (h1[hop1][hop0]+offset0)*ratio_neg;
-				
+				h2[hop1][hop0] = hop1*ratio_neg;
+				h1[hop1][hop0] = h2[hop1][hop0]*ratio_neg;
+				h0[hop1][hop0] = h1[hop1][hop0]*ratio_neg;
 				
 				//final color component ( luminance or chrominance). depends on hop1
 				//from most negative hop (pccr[hop1][hop0][0]) to most possitive hop (pccr[hop1][hop0][8])
@@ -4189,7 +4207,8 @@ public void initPreComputations()
 	//cache of ratios ( to avoid Math.pow operation)
 	//---------------------------------------------
 	cache_ratio=new float[2][h1range][256][50];
-	
+	ratio=new int[2][h1range][256][50];
+
 	
 	for (int hop0=0;hop0<=255;hop0++) {
 		for (int hop1=1;hop1<h1range;hop1++)
@@ -4222,6 +4241,11 @@ public void initPreComputations()
 			}
 		}
 		
+
+		DecimalFormatSymbols format = new DecimalFormatSymbols(Locale.GERMAN);
+		format.setDecimalSeparator('.');
+		DecimalFormat formatter = new DecimalFormat("#0.0", format);
+		
 		//assignment of precomputed hop values, for each ofp value
 		//--------------------------------------------------------
 		for (int hop1=1;hop1<h1range;hop1++)
@@ -4232,9 +4256,11 @@ public void initPreComputations()
 			{
 		        //get r value for possitive hops from cache_ratio	
 			float ratio_pos=cache_ratio[0][hop1][hop0][rmax];
-			
+			ratio[0][hop1][hop0][rmax] = (int) (Float.parseFloat(formatter.format(ratio_pos))*10);
+	        
 			//get r' value for negative hops from cache_ratio
 			float ratio_neg=cache_ratio[1][hop1][hop0][rmax];
+			ratio[1][hop1][hop0][rmax] = (int) (Float.parseFloat(formatter.format(ratio_neg))*10);
 
 			// COMPUTATION OF LUMINANCES:
 			float offset = 0;

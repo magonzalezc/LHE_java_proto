@@ -48,6 +48,15 @@ public FrameCompressor(int k0, int k1, int k2, int k6, int k7, int k8,
 	
 }
 //******************************************************************
+public FrameCompressor(int k0, int k1, int offset0, int offset1)
+{
+	//constructor
+	this.number_of_threads=1;
+	img=new ImgUtil();
+	grid = new Grid();
+	lhe=new LHEquantizer(k0, k1, offset0, offset1);
+	
+}
 //*****************************************************************
 public FrameCompressor(int number_of_threads)
 {
