@@ -126,8 +126,10 @@ public float[] compressBasicFrame(String optionratio)
 	
 	//esta tiene el colin
 	if (optionratio.equals("1"))
-	lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_initial(img.hops[0],img.LHE_YUV[0]);
 	
+	lhe.quantizeOneHopPerPixel_improved(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_R_LHE2(img.hops[0],img.LHE_YUV[0]);
 	
 	//esta no tiene el colin
@@ -199,7 +201,8 @@ public float[] compressLHE2()
 	//lhe.quantizeOneHopPerPixel_LHE2_experimento31(img.hops[0],img.LHE_YUV[0]);
 	//lhe.quantizeOneHopPerPixel_LHE2_experimento33(img.hops[0],img.LHE_YUV[0]);// bueno
 	//lhe.quantizeOneHopPerPixel_LHE2_experimento35(img.hops[0],img.LHE_YUV[0]);
-	lhe.quantizeOneHopPerPixel_LHE2_experimento36(img.hops[0],img.LHE_YUV[0]);
+	//lhe.quantizeOneHopPerPixel_LHE2_experimento36(img.hops[0],img.LHE_YUV[0]);
+	lhe.quantizeOneHopPerPixel_LHE2_experimento38(img.hops[0],img.LHE_YUV[0]);
 	//lhe.esperanza_matematica_v001(img.hops[0],img.LHE_YUV[0]);// bueno
 	
 	
@@ -295,7 +298,10 @@ public float[] compressFrame(float ql)
 		// IMPROVEMENT PENDING:
 		//coding by blocks instead globally, this part is paralellizable  N^2-->2N+1
 	//lhe.initGeomR();
-		lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+		//lhe.quantizeOneHopPerPixel_R(img.hops[0],img.LHE_YUV[0]);
+		
+		lhe.quantizeOneHopPerPixel_initial(img.hops[0],img.LHE_YUV[0]);
+		//lhe.quantizeOneHopPerPixel_improved(img.hops[0],img.LHE_YUV[0]);
 		// now, hops are stored at img.hops[color component][coordinate]
 		// they can be saved
 		
@@ -410,7 +416,11 @@ public float[] compressFrame(float ql)
 			    
 					//lhe.quantizeDownsampledBlock_R(bi, img.hops[0],img.downsampled_LHE_YUV[0], img.downsampled_YUV[0],img.boundaries_YUV[0] );
 				//lhe.quantizeDownsampledBlock_R3(bi, img.hops[0],img.downsampled_LHE_YUV[0], img.downsampled_YUV[0],img.boundaries_YUV[0] );
-					lhe.quantizeDownsampledBlock_R4(bi, img.hops[0],img.downsampled_LHE_YUV[0], img.downsampled_YUV[0],img.boundaries_YUV[0] );
+					
+					
+				lhe.quantizeDownsampledBlock_R4(bi, img.hops[0],img.downsampled_LHE_YUV[0], img.downsampled_YUV[0],img.boundaries_YUV[0] );
+				//lhe.quantizeDownsampledBlock_R4_improved(bi, img.hops[0],img.downsampled_LHE_YUV[0], img.downsampled_YUV[0],img.boundaries_YUV[0] );
+				
 				//lhe.quantizeDownsampledBlock_R2(bi, img.hops[0],img.downsampled_LHE_YUV[0], img.downsampled_YUV[0],img.boundaries_YUV[0] );
 				
 				
